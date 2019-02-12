@@ -8,6 +8,13 @@ properties([
 //        pipelineTriggers([
 //                issueCommentTrigger('.*test.*')
 //        ]),
+        parameters([
+                string(
+                        description: 'version name',
+                        name: 'VERSION'
+                )
+
+        ]),
 
         [
                 $class         : 'BuildBlockerProperty',
