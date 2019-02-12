@@ -10,9 +10,10 @@ properties([
 //        ]),
         parameters([
                 string(
-                        description: 'version name',
-                        name: 'VERSION'
-                )
+                        defaultValue: 'http://10.0.1.5:5000',
+                        description: 'Aptly URL',
+                        name: 'APTLY_URL'
+                ),
 
         ]),
 
@@ -252,6 +253,16 @@ node(isPR()?'slave-02':'master') {
                 }
             }
         }
+    }
+
+    stage('aptly') {
+        if (!isPR()) {
+            dir('kaa') {
+                sh "curl -F file=@server/node/target/kaa-node.deb;filename=kaa-node_${kaaBranch}_all ${env.APTLY_URL}/api/files/jbt"
+//                sh "curl -X POST -H 'Content-Type: application/json' --data '{\"Distribution\": \"xenial\", \"Sources\": [{\"Name\": \"jbt\"}]}' ${env.APTLY_URL}/api/publish//repos"
+            }
+        }
+
     }
 
 }//node
