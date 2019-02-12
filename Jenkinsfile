@@ -261,6 +261,7 @@ node(isPR()?'slave-02':'master') {
             dir('kaa') {
                 sh "wget http://nginx.org/packages/ubuntu/pool/nginx/n/nginx/nginx_1.10.1-1~xenial_amd64.deb -O ./server/node/target/nginx.deb"
                 sh "curl -F 'file=@./server/node/target/nginx.deb;filename=nginx_${kaaBranch}_amd64.deb' ${env.APTLY_URL}/api/files/jbt"
+                sh "curl -X POST ${env.APTLY_URL}/api/repos/jbt/file/jbt"
                 sh "curl -X PUT -H 'Content-Type: application/json' --data '{\"Signing\": {\"GpgKey\": \"Nborisenko <nborisenko@kaaiot.io>\"}}' ${env.APTLY_URL}/api/publish/:./xenial"
             }
         }
