@@ -58,6 +58,10 @@ def isPR() {
     return env.BRANCH_NAME ==~ /PR-\d+/
 }
 
+def isMaster() {
+    return env.BRANCH_NAME == 'aptly-build'
+}
+
 def kaaBranch="none"
 def kaaCommit="00000000"
 def kaaTag="untagged"
@@ -270,7 +274,17 @@ node(isPR()?'slave-02':'master') {
                 sh "curl -X PUT -H 'Content-Type: application/json' --data '{\"Signing\": {\"GpgKey\": \"Nborisenko <nborisenko@kaaiot.io>\"}}' ${env.APTLY_URL}/api/publish/:./xenial"
             }
         }
+    }
 
+    stage('deploy-on-stage') {
+        if (isMaster()) {
+            build(
+                    job: 'deploy_kaa_stage',
+                    parameters: [
+                            string(name: 'VERSION', value: "${env.VERSION}")
+                    ]
+            )
+        }
     }
 
 }//node
