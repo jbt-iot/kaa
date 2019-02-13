@@ -10,10 +10,15 @@ properties([
 //        ]),
         parameters([
                 string(
+                        defaultValue: '0.9.1-SNAPSHOT',
+                        description: 'Kaa version',
+                        name: 'VERSION'
+                ),
+                string(
                         defaultValue: 'http://10.0.1.5:5000',
                         description: 'Aptly URL',
                         name: 'APTLY_URL'
-                ),
+                )
 
         ]),
 
@@ -158,7 +163,7 @@ node(isPR()?'slave-02':'master') {
 
     stage('build kaa deb') {
         dir('kaa') {
-            sh "KAA_VERSION=${env.BRANCH_NAME} envsubst < ./server/node/src/deb/control/control.template > ./server/node/src/deb/control/control"
+            sh "KAA_VERSION=${env.VERSION} envsubst < ./server/node/src/deb/control/control.template > ./server/node/src/deb/control/control"
             if (isPR()) {
                 sh "mvn -P compile-gwt,cassandra-dao,postgresql-dao,kafka clean package verify"
             } else {
@@ -260,7 +265,7 @@ node(isPR()?'slave-02':'master') {
     stage('aptly') {
         if (!isPR()) {
             dir('kaa') {
-                sh "curl -F 'file=@./server/node/target/kaa-node.deb;filename=kaa-node_${env.BRANCH_NAME}_amd64.deb' ${env.APTLY_URL}/api/files/jbt"
+                sh "curl -F 'file=@./server/node/target/kaa-node.deb;filename=kaa-node_${env.VERSION}_amd64.deb' ${env.APTLY_URL}/api/files/jbt"
                 sh "curl -X POST ${env.APTLY_URL}/api/repos/jbt/file/jbt"
                 sh "curl -X PUT -H 'Content-Type: application/json' --data '{\"Signing\": {\"GpgKey\": \"Nborisenko <nborisenko@kaaiot.io>\"}}' ${env.APTLY_URL}/api/publish/:./xenial"
             }
