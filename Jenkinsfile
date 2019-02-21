@@ -59,7 +59,7 @@ def isPR() {
 }
 
 def isMaster() {
-    return env.BRANCH_NAME == 'aptly-build'
+    return env.BRANCH_NAME == '0.9.0-patched'
 }
 
 def kaaBranch="none"
