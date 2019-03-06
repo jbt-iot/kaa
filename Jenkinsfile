@@ -202,7 +202,7 @@ node(isPR()?'slave-02':'master') {
         }
 
     }
-
+    /*
     stage('run local env'){
         if (isPR()) {
             echo "skip run local env for PR builds"
@@ -265,7 +265,7 @@ node(isPR()?'slave-02':'master') {
             }
         }
     }
-
+    */
     stage('aptly') {
         if (!isPR()) {
             dir('kaa') {
