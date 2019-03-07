@@ -283,6 +283,9 @@ public class ConcurrentCacheService implements CacheService {
                         ProfileFilterDto profileFilter = profileService.findProfileFilterById(changeDto.getProfileFilterId());
                         if (profileFilter == null) {
                             LOG.trace("Unable to find profile filter with id {}", changeDto.getProfileFilterId());
+                            //mark as related for safety, we don't know what profile filter was lost and if it was
+                            //related to current endpoint
+                            relatedChanges.add(historyDto);
                         }else if (supports(profileFilter, key.getEndpointProfileSchemaVersion(), key.getServerProfileSchemaVersion())) {
                             relatedChanges.add(historyDto);
                         }
