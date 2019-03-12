@@ -105,7 +105,8 @@ public class DefaultFilterService implements FilterService {
         if (filter != null) {
             LOG.trace("matching profile body with filter [{}]: {}", filter.getId(), filter.getBody());
         } else {
-            LOG.trace("Profile filter with id {} doesn't exist", profileFilterId);
+            LOG.warn("Profile filter with id {} doesn't exist", profileFilterId);
+            return false;
         }
         return checkFilter(filterEvaluator, filter);
     }
