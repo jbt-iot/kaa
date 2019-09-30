@@ -27,12 +27,13 @@ namespace kaa {
 Botan::LibraryInitializer Kaa::botanInit_("thread_safe=true");
 
 std::shared_ptr<IKaaClient> Kaa::newClient(IKaaClientPlatformContextPtr context
+                                         , LoggerPtr logger
                                          , KaaClientStateListenerPtr listener)
 {
     if (!context) {
         throw KaaException("Kaa client platform context is null");
     }
-    return std::shared_ptr<IKaaClient>(new KaaClient(context, listener));
+    return std::shared_ptr<IKaaClient>(new KaaClient(context, logger, listener));
 }
 
 }
