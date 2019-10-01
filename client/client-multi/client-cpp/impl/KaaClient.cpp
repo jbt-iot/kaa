@@ -44,8 +44,7 @@
 namespace kaa {
 
 KaaClient::KaaClient(IKaaClientPlatformContextPtr platformContext, LoggerPtr logger, KaaClientStateListenerPtr listener)
-    :	logger_ ((logger == nullptr) ? logger_ = std::make_shared<DefaultLogger>(platformContext->getProperties().getClientId(), platformContext->getProperties().getLogFileName())
-									 : logger_ = logger),
+	: logger_(logger),
 		context_(platformContext->getProperties(), *logger_, platformContext->getExecutorContext(), nullptr,
 				(listener == nullptr) ? std::make_shared<KaaClientStateListener>() : listener),
 		status_(new ClientStatus(context_)),

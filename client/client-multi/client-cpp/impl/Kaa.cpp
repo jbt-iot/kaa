@@ -33,7 +33,12 @@ std::shared_ptr<IKaaClient> Kaa::newClient(IKaaClientPlatformContextPtr context
     if (!context) {
         throw KaaException("Kaa client platform context is null");
     }
-    return std::shared_ptr<IKaaClient>(new KaaClient(context, logger, listener));
+	if (logger == nullptr)
+	{
+		logger = std::make_shared<DefaultLogger>(context->getProperties().getClientId(), context->getProperties().getLogFileName());
+	}
+
+	return std::shared_ptr<IKaaClient>(new KaaClient(context, logger, listener));
 }
 
 }
