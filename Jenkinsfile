@@ -368,39 +368,29 @@ node(selectNode()) {
     }
 
     stage ('change parent chart requirements') {
-      when {
-        expression {
-          return env.BRANCH_NAME == '0.9.0-patched'
+        dir ('kaa') {
+            if (env.BRANCH_NAME == '0.9.0-patched') {
+                LIB.build.triggerBuild("jbt-iot/jbt-metachart/master", [
+                  COMPONENT: 'kaa',
+                  COMPONENT_VERSION: LIB.version.getCurrentVersion()
+                ])
+            }
         }
-      }
-      steps {
-        script {
-          LIB.build.triggerBuild("jbt-iot/jbt-metachart/master", [
-            COMPONENT: 'kaa',
-            COMPONENT_VERSION: LIB.version.getCurrentVersion()
-          ])
-        }
-      }
     }
 
     stage('deploy to stage') {
-      when {
-        expression {
-          return env.BRANCH_NAME == 'master'
+        dir ('kaa') {
+            if (env.BRANCH_NAME == '0.9.0-patched') {
+                LIB.build.triggerBuild("jbt-iot/jbt-environment/master", [
+                  CLUSTER_NAME: 'stage',
+                  ENVIRONMENT_NAME: 'stage',
+                  SECRETS_FROM: 'stage',
+                  ACTION: 'create',
+                  REMOVE_ON_FAILURE: 'false',
+                  HELM_CHART_ONLY: 'true'
+                ])
+            }
         }
-      }
-      steps {
-        script {
-          LIB.build.triggerBuild("jbt-iot/jbt-environment/master", [
-            CLUSTER_NAME: 'stage',
-            ENVIRONMENT_NAME: 'stage',
-            SECRETS_FROM: 'stage',
-            ACTION: 'create',
-            REMOVE_ON_FAILURE: 'false',
-            HELM_CHART_ONLY: 'true'
-          ])
-        }
-      }
     }
 }//node
 
