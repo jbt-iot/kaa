@@ -124,7 +124,7 @@ spec:
               subPath: sql-dao.properties
             - name: kaa-keys
               readOnly: true
-              mountPath: "/keys"
+              mountPath: "/usr/lib/kaa-node/keys"
             - mountPath: /srv/lb-ip
               name: lb-ip
           resources:
