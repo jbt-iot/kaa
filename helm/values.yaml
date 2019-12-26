@@ -44,6 +44,9 @@ global:
       urlDatasource: "jdbc:postgresql://{{ .Release.Name }}-{{ default \"postgresql\" }}/{{ .Values.global.postgresql.kaa.postgresqlDatabase }}"
       postgresqlDatabase: "kaa"
 
+labels:
+  app.kubernetes.io/runtime: java
+
 replicaCount: 1
 
 metadata:
