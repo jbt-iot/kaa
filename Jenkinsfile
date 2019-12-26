@@ -284,7 +284,7 @@ node(selectNode()) {
             def kaaAgentTag = parseKaaAgentTag()
             dir('jbt-qa-e2e') {
 
-                withCredentials([usernamePassword(credentialsId: 'JBT_QA_E2E_CREDENTIALS', usernameVariable: 'JBT_QA_E2E_USER', passwordVariable: 'JBT_QA_E2E_PASS'),
+                withCredentials([usernamePassword(credentialsId: 'JBT_QA_E2E_CREDENTIALS_PROD', usernameVariable: 'JBT_QA_E2E_USER', passwordVariable: 'JBT_QA_E2E_PASS'),
                                  string(credentialsId: '5b51337c-78c3-4677-9153-f9eca88ee8bc', variable: 'AWS_ACCESS_KEY_ID'),
                                  string(credentialsId: 'd27d9f8f-018d-4ed0-ac7b-749e21721e64', variable: 'AWS_SECRET_ACCESS_KEY'),
                                  string(credentialsId: '5a2efc62-9fbc-4096-9bd0-719d30cd7f2b', variable: 'AWS_DEFAULT_REGION'),
