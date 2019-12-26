@@ -294,6 +294,7 @@ node(selectNode()) {
           
                         export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
                         export JBT_QA_E2E_KAA_HOST='localhost'
+                        export JBT_QA_E2E_KAA_PORT='7777'
                         export JBT_QA_E2E_CASSANDRA_HOST='localhost'
                         export JBT_QA_E2E_BOOTSTRAP_SERVERS='localhost:9092'
                         export JBT_QA_E2E_AGENT_IMAGE_TAG='${kaaAgentTag}'
