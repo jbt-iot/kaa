@@ -3,11 +3,7 @@ env.GITHUB_GIT_URL = 'git@github.com:jbt-iot/kaa.git'
 
 // noinspection GroovyAssignabilityCheck
 properties([
-        disableConcurrentBuilds(),
 
-//        pipelineTriggers([
-//                issueCommentTrigger('.*test.*')
-//        ]),
         parameters([
                 string(
                         defaultValue: '0.9.1-SNAPSHOT',
