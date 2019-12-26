@@ -317,7 +317,7 @@ node(selectNode()) {
         } finally {
             dir('jbt-qa-e2e') {
                 echo 'Publish unit test results'
-                junit allowEmptyResults: false, testResults: 'build/test-results/test/TEST-*.xml'
+                junit allowEmptyResults: true, testResults: 'build/test-results/test/TEST-*.xml'
 
                 sh "./gradlew allureReport || true"
 
