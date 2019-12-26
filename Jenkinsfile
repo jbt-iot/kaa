@@ -293,7 +293,7 @@ node(selectNode()) {
                                  string(credentialsId: 'JBT_QA_E2E_KAA_PASSWORD', variable: 'JBT_QA_E2E_KAA_PASSWORD'),
 
                 ]) {
-                    timeout(60) {
+                    timeout(15) {
                         sh """#!/bin/bash
           
                         export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
