@@ -300,7 +300,10 @@ node(selectNode()) {
                         export JBT_QA_E2E_AGENT_IMAGE_TAG='${kaaAgentTag}'
                         export JBT_QA_E2E_S3_REPORT_BUCKET='jbt-qa-it-tag-images'
                         export JBT_QA_E2E_S3_REPORT_PREFIX='reports'
-                         
+                        export JBT_QA_E2E_ELASTIC_PROTOCOL='http'
+                        export JBT_QA_E2E_ELASTIC_HOST='localhost'
+                        export JBT_QA_E2E_ELASTIC_PORT='9200'
+
                         ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${ARTIFACTORY_PASS}' --info                    
                     """
 
