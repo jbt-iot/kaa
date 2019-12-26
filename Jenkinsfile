@@ -289,7 +289,7 @@ node(selectNode()) {
                                  string(credentialsId: 'JBT_QA_E2E_KAA_PASSWORD', variable: 'JBT_QA_E2E_KAA_PASSWORD'),
 
                 ]) {
-                    timeout(15) {
+                    timeout(20) {
                         sh """#!/bin/bash
           
                         export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
@@ -400,19 +400,20 @@ def parseKaaAgentTag() {
 
 def saveLogs(String project) {
 
-    fetchDockerLog("${project}_jbt-kaa-appender-cfg_1")
-    fetchDockerLog("${project}_ui_1")
-    fetchDockerLog("${project}_kaa_1")
-    fetchDockerLog("${project}_web-app_1")
-    fetchDockerLog("${project}_code-regeneration-service_1")
-    fetchDockerLog("${project}_kafka_1")
-    fetchDockerLog("${project}_spark-worker_1")
+    fetchDockerLog("${project}_action-server_1")
     fetchDockerLog("${project}_cassandra-kaa_1")
-    fetchDockerLog("${project}_zoo_1")
-    fetchDockerLog("${project}_postgres_1")
-    fetchDockerLog("${project}_spark-master_1")
-    fetchDockerLog("${project}_redis_1")
     fetchDockerLog("${project}_cassandra_1")
+    fetchDockerLog("${project}_code-regeneration-service_1")
+    fetchDockerLog("${project}_jbt-kaa-appender-cfg_1")
+    fetchDockerLog("${project}_kaa_1")
+    fetchDockerLog("${project}_kafka_1")
+    fetchDockerLog("${project}_postgres_1")
+    fetchDockerLog("${project}_redis_1")
+    fetchDockerLog("${project}_spark-master_1")
+    fetchDockerLog("${project}_spark-worker_1")
+    fetchDockerLog("${project}_ui_1")
+    fetchDockerLog("${project}_web-app_1")
+    fetchDockerLog("${project}_zoo_1")
     fetchSparkLogs(project)
     archiveArtifacts allowEmptyArchive: true, artifacts: '**/*.log.gz'
 }
