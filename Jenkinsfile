@@ -1,3 +1,10 @@
+@Library('jbt-shared-lib@29872b4d') _
+
+import com.jbt.jenkins.Container
+
+def LIB = Container.builder(this)
+LIB.init()
+
 env.GITHUB_HTTP_URL = 'https://github.com/jbt-iot/kaa'
 env.GITHUB_GIT_URL = 'git@github.com:jbt-iot/kaa.git'
 
