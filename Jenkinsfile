@@ -1,3 +1,10 @@
+@Library('jbt-shared-lib@29872b4d') _
+
+import com.jbt.jenkins.Container
+
+def LIB = Container.builder(this)
+LIB.init()
+
 env.GITHUB_HTTP_URL = 'https://github.com/jbt-iot/kaa'
 env.GITHUB_GIT_URL = 'git@github.com:jbt-iot/kaa.git'
 
@@ -249,7 +256,7 @@ node(selectNode()) {
         }
 
         dir('jbt-backend') {
-            sh "./gradlew clean build -x test"
+            sh "./gradlew clean build -x test -x checkstyleMain -x checkstyleTest -x helmInitClient -x helmFilterMainChartSources -x helmUpdateMainChartDependencies -x helmUpdateMainChartDependencies -x helmFilterSparkChartSources -x helmUpdateSparkChartDependencies -x helmPackageSparkChart -x helmPackageMainChart  --parallel"
         }
 
         dir('jbt-kaa-agent-builder') {
@@ -411,6 +418,7 @@ def saveLogs(String project) {
     fetchDockerLog("${project}_code-regeneration-service_1")
     fetchDockerLog("${project}_jbt-kaa-appender-cfg_1")
     fetchDockerLog("${project}_kaa_1")
+    fetchDockerLog("${project}_kaa-binary-data-loader_1")
     fetchDockerLog("${project}_kafka_1")
     fetchDockerLog("${project}_postgres_1")
     fetchDockerLog("${project}_redis_1")
