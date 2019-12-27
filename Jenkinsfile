@@ -300,6 +300,8 @@ node(selectNode()) {
                         export JBT_QA_E2E_AGENT_IMAGE_TAG='${kaaAgentTag}'
                         export JBT_QA_E2E_S3_REPORT_BUCKET='jbt-qa-it-tag-images'
                         export JBT_QA_E2E_S3_REPORT_PREFIX='reports'
+                        export JBT_QA_E2E_S3_UPLOADER_BUCKET='jbt-qa-it-tag-images'
+                        export BT_QA_E2E_S3_UPLOADER_PREFIX='binary'
                         export JBT_QA_E2E_ELASTIC_PROTOCOL='http'
                         export JBT_QA_E2E_ELASTIC_HOST='localhost'
                         export JBT_QA_E2E_ELASTIC_PORT='9200'
