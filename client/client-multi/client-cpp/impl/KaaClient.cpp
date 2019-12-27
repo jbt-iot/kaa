@@ -107,8 +107,11 @@ void KaaClient::start()
     context_.getExecutorContext().init();
 
     context_.getExecutorContext().getLifeCycleExecutor().add([this]
+    {
+        for( size_t attempt = 1; ;++attempt )
         {
-            try {
+            try
+            {
 #ifdef KAA_USE_CONFIGURATION
                 configurationManager_->init();
 #endif
@@ -116,11 +119,19 @@ void KaaClient::start()
                 context_.getClientStateListener().onStarted();
 
                 KAA_LOG_INFO("Kaa client started");
-            } catch (std::exception& e) {
+            }
+            catch (std::exception &e)
+            {
                 KAA_LOG_ERROR(boost::format("Caught exception on start: %s") % e.what());
                 context_.getClientStateListener().onStartFailure(KaaException(e));
+
+                KAA_LOG_INFO(boost::format("Kaa client trying to reconnect to the server... %1%") % attempt);
+
+                continue;
             }
-        });
+            break;
+        }
+    });
 
     setClientState(State::STARTED);
 }
