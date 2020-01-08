@@ -24,7 +24,7 @@
 #include <kaa/KaaClientProperties.hpp>
 #include "kaa/IKaaClientContext.hpp"
 
-
+#include <cstdio>
 
 #define KAA_LOGS_TABLE_NAME       "KAA_LOGS"
 #define KAA_BUCKETS_TABLE_NAME    "KAA_BUCKETS"
@@ -132,9 +132,10 @@
 /*
  * OPTIMIZATION OPTIONS.
  */
-#define KAA_SYNCHRONIZATION_OPTION        "PRAGMA synchronous=OFF"
-#define KAA_COUNT_CHANGES_OPTION          "PRAGMA count_changes=OFF"
-#define KAA_MEMORY_JOURNAL_MODE_OPTION    "PRAGMA journal_mode=MEMORY"
+#define KAA_SYNCHRONIZATION_OPTION        "PRAGMA synchronous=NORMAL"
+#define KAA_MEMORY_JOURNAL_MODE_OPTION    "PRAGMA journal_mode=WAL"
+#define KAA_QNX_LOCKING_MODE              "PRAGMA locking_mode=EXCLUSIVE"
+#define KAA_QNX_MEMORY_MAPPED_SIZE        "PRAGMA mmap_size=0"
 #define KAA_MEMORY_TEMP_STORE_OPTION      "PRAGMA temp_store=MEMORY"
 #define KAA_AUTO_VACUUM_OPTION            "PRAGMA auto_vacuum=FULL"
 
@@ -329,21 +330,23 @@ void SQLiteDBLogStorage::applyDBOptimization(int mask)
         return;
     }
 
-    if (mask & SQLiteOptimizationOptions::SQLITE_SYNCHRONOUS_OFF) {
+    if (mask & SQLiteOptimizationOptions::SQLITE_SYNCHRONOUS_FLAG) {
         sqlite3_exec(db_, KAA_SYNCHRONIZATION_OPTION, nullptr, nullptr, nullptr);
         KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_SYNCHRONIZATION_OPTION);
     }
     if (mask & SQLiteOptimizationOptions::SQLITE_MEMORY_JOURNAL_MODE) {
         sqlite3_exec(db_, KAA_MEMORY_JOURNAL_MODE_OPTION, nullptr, nullptr, nullptr);
         KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_MEMORY_JOURNAL_MODE_OPTION);
+        #ifdef __QNXNTO__
+        sqlite3_exec(db_, KAA_QNX_MEMORY_MAPPED_SIZE, nullptr, nullptr, nullptr);
+        KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_QNX_MEMORY_MAPPED_SIZE);
+        sqlite3_exec(db_, KAA_QNX_LOCKING_MODE, nullptr, nullptr, nullptr);
+        KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_QNX_LOCKING_MODE);
+        #endif
     }
     if (mask & SQLiteOptimizationOptions::SQLITE_MEMORY_TEMP_STORE) {
         sqlite3_exec(db_, KAA_MEMORY_TEMP_STORE_OPTION, nullptr, nullptr, nullptr);
         KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_MEMORY_TEMP_STORE_OPTION);
-    }
-    if (mask & SQLiteOptimizationOptions::SQLITE_COUNT_CHANGES_OFF) {
-        sqlite3_exec(db_, KAA_COUNT_CHANGES_OPTION, nullptr, nullptr, nullptr);
-        KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_COUNT_CHANGES_OPTION);
     }
     if (mask & SQLiteOptimizationOptions::SQLITE_AUTO_VACUUM_FULL) {
         sqlite3_exec(db_, KAA_AUTO_VACUUM_OPTION, nullptr, nullptr, nullptr);
@@ -391,8 +394,24 @@ void SQLiteDBLogStorage::openDBConnection()
 {
     KAA_LOG_TRACE(boost::format("Going to connect to '%s' log database") % dbName_);
 
-    int errorCode = sqlite3_open(dbName_.c_str(), &db_);
-    throwIfError(errorCode, SQLITE_OK, (boost::format("Failed to connect to '%s' log database (error %d)") % dbName_ % errorCode).str());
+    while(true)
+    {
+        int errorCode = sqlite3_open(dbName_.c_str(), &db_);
+        if(errorCode == SQLITE_CORRUPT)
+        {
+            if(std::remove(dbName_.c_str()))
+            {
+                KAA_LOG_INFO(boost::format("'%s' log database is corrupted") % dbName_);
+                continue;
+            }
+            else
+            {
+                KAA_LOG_ERROR(boost::format("Cannot delete corrupted '%s' log database") % dbName_);
+            }
+        }
+        throwIfError(errorCode, SQLITE_OK, (boost::format("Failed to connect to '%s' log database (error %d)") % dbName_ % errorCode).str());
+        break;
+    }
 
     KAA_LOG_INFO(boost::format("Connected to '%s' log database") % dbName_);
 }
