@@ -42,16 +42,14 @@ enum SQLiteOptimizationOptions
 {
     SQLITE_NO_OPTIMIZATIONS    = 0x0,
 
-    SQLITE_SYNCHRONOUS_OFF     = 0x1,
+    SQLITE_SYNCHRONOUS_FLAG     = 0x1,
     SQLITE_MEMORY_JOURNAL_MODE = 0x2,
     SQLITE_MEMORY_TEMP_STORE   = 0x4,
-    SQLITE_COUNT_CHANGES_OFF   = 0x8,
-    SQLITE_AUTO_VACUUM_FULL    = 0x10,
+    SQLITE_AUTO_VACUUM_FULL    = 0x8,
 
-    SQLITE_ALL_OPTIMIZATIONS   = SQLITE_SYNCHRONOUS_OFF |
+    SQLITE_ALL_OPTIMIZATIONS   = SQLITE_SYNCHRONOUS_FLAG |
                                  SQLITE_MEMORY_JOURNAL_MODE |
                                  SQLITE_MEMORY_TEMP_STORE |
-                                 SQLITE_COUNT_CHANGES_OFF |
                                  SQLITE_AUTO_VACUUM_FULL
 };
 
