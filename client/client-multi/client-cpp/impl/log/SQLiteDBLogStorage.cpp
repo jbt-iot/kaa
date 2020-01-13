@@ -25,6 +25,14 @@
 #include "kaa/IKaaClientContext.hpp"
 
 #include <cstdio>
+#include <chrono>
+
+#ifdef QNX_650_CPP11_TO_STRING_PATCH
+#include <custom/string.h>
+#else
+#include <string>
+#endif
+
 
 #define KAA_LOGS_TABLE_NAME       "KAA_LOGS"
 #define KAA_BUCKETS_TABLE_NAME    "KAA_BUCKETS"
@@ -141,11 +149,39 @@
 
 namespace kaa {
 
-static void throwIfError(int errorCode, int expectedErrorCode, const std::string& errorMessage)
+void SQLiteDBLogStorage::throwIfError(int errorCode, int expectedErrorCode, const std::string& errorMessage)
 {
     if (errorCode != expectedErrorCode) {
+        renameGuard_.setErrorCode(errorCode);
         throw KaaException(errorMessage);
     }
+}
+
+RenameGuard::RenameGuard(const std::string &dbName)
+    : errorCode_{SQLITE_OK}, dbName_{dbName}
+{
+}
+
+RenameGuard::~RenameGuard()
+{
+    if (errorCode_ == SQLITE_CORRUPT)
+    {
+        auto now = std::chrono::system_clock::now();
+        auto newDBName std::to_string(now.time_since_epoch().count()));
+        if(std::rename(dbName_, newDBName.c_str()))
+        {
+            KAA_LOG_WARN(boost::format("Cannot rename '%s' to '%s'") % dbName_ % newDBName);
+        }
+        else
+        {
+            KAA_LOG_WARN(boost::format("DB '%s' corrupted. Renamed to '%s'") % dbName_ % newDBName);
+        }
+    }
+}
+
+void RenameGuard::setErrorCode(const int errorCode)
+{
+    errorCode_ = errorCode;
 }
 
 class SQLiteStatement {
@@ -176,7 +212,7 @@ private:
 SQLiteDBLogStorage::SQLiteDBLogStorage(IKaaClientContext &context, std::size_t bucketSize, std::size_t bucketRecordCount)
     : dbName_(context.getProperties().getLogsDatabaseFileName()),
       maxBucketSize_(bucketSize), maxBucketRecordCount_(bucketRecordCount),
-      context_(context)
+      context_(context), renameGuard_(dbName_)
 {
     init(SQLiteOptimizationOptions::SQLITE_AUTO_VACUUM_FULL);
 }
@@ -184,7 +220,7 @@ SQLiteDBLogStorage::SQLiteDBLogStorage(IKaaClientContext &context, std::size_t b
 SQLiteDBLogStorage::SQLiteDBLogStorage(IKaaClientContext &context,
                                        const std::string& dbName, int optimizationMask,
                                        std::size_t bucketSize, std::size_t bucketRecordCount)
-    : dbName_(dbName), maxBucketSize_(bucketSize), maxBucketRecordCount_(bucketRecordCount), context_(context)
+    : dbName_(dbName), maxBucketSize_(bucketSize), maxBucketRecordCount_(bucketRecordCount), context_(context), renameGuard_(dbName_)
 {
     init(optimizationMask);
 }
@@ -394,24 +430,8 @@ void SQLiteDBLogStorage::openDBConnection()
 {
     KAA_LOG_TRACE(boost::format("Going to connect to '%s' log database") % dbName_);
 
-    while(true)
-    {
-        int errorCode = sqlite3_open(dbName_.c_str(), &db_);
-        if(errorCode == SQLITE_CORRUPT)
-        {
-            if(std::remove(dbName_.c_str()))
-            {
-                KAA_LOG_INFO(boost::format("'%s' log database is corrupted") % dbName_);
-                continue;
-            }
-            else
-            {
-                KAA_LOG_ERROR(boost::format("Cannot delete corrupted '%s' log database") % dbName_);
-            }
-        }
-        throwIfError(errorCode, SQLITE_OK, (boost::format("Failed to connect to '%s' log database (error %d)") % dbName_ % errorCode).str());
-        break;
-    }
+    int errorCode = sqlite3_open(dbName_.c_str(), &db_);
+    throwIfError(errorCode, SQLITE_OK, (boost::format("Failed to connect to '%s' log database (error %d)") % dbName_ % errorCode).str());
 
     KAA_LOG_INFO(boost::format("Connected to '%s' log database") % dbName_);
 }
