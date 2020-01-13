@@ -56,7 +56,7 @@ enum SQLiteOptimizationOptions
 class RenameGuard
 {
 public:
-    explicit RenameGuard(const std::string& dbName);
+    RenameGuard(IKaaClientContext &context, const std::string& dbName);
     ~RenameGuard();
 
     void setErrorCode(const int errorCode);
@@ -64,6 +64,7 @@ public:
 private:
     int errorCode_;
     const std::string dbName_;
+    IKaaClientContext &context_;
 };
 
 class SQLiteDBLogStorage : public ILogStorage, public ILogStorageStatus {
