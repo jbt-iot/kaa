@@ -271,11 +271,16 @@ node(selectNode()) {
                              string(credentialsId: 'JBT_QA_E2E_KAA_PASSWORD', variable: 'KAA_PASSWORD'),
 
             ]) {
-                sh "export KAA_TAG=${kaaTag}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
+                try {
+                    sh "export KAA_TAG=${kaaTag}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
+                } catch (e) {
+                    echo "FAILED: $e"
+                    saveLogs("${kaaCommit}")
+                    sh "export JBT_BACKEND_DIR=`cd ../jbt-backend;pwd`; docker-compose --project-name ${kaaCommit} down -t 1 || true"
+                    throw e
+                }
             }
-
         }
-
     }
 
     stage('e2e vs local env') {
