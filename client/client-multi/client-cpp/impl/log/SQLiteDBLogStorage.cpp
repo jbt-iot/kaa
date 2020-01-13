@@ -33,7 +33,6 @@
 #include <string>
 #endif
 
-
 #define KAA_LOGS_TABLE_NAME       "KAA_LOGS"
 #define KAA_BUCKETS_TABLE_NAME    "KAA_BUCKETS"
 
@@ -430,8 +429,24 @@ void SQLiteDBLogStorage::openDBConnection()
 {
     KAA_LOG_TRACE(boost::format("Going to connect to '%s' log database") % dbName_);
 
-    int errorCode = sqlite3_open(dbName_.c_str(), &db_);
-    throwIfError(errorCode, SQLITE_OK, (boost::format("Failed to connect to '%s' log database (error %d)") % dbName_ % errorCode).str());
+    while(true)
+    {
+        int errorCode = sqlite3_open(dbName_.c_str(), &db_);
+        if(errorCode == SQLITE_CORRUPT)
+        {
+            if(std::remove(dbName_.c_str()))
+            {
+                KAA_LOG_INFO(boost::format("'%s' log database is corrupted") % dbName_);
+                continue;
+            }
+            else
+            {
+                KAA_LOG_ERROR(boost::format("Cannot delete corrupted '%s' log database") % dbName_);
+            }
+        }
+        throwIfError(errorCode, SQLITE_OK, (boost::format("Failed to connect to '%s' log database (error %d)") % dbName_ % errorCode).str());
+        break;
+    }
 
     KAA_LOG_INFO(boost::format("Connected to '%s' log database") % dbName_);
 }
