@@ -1,0 +1,27 @@
+From 336c3d98988c18c3eb77e93ea2c6077f4f207dad Mon Sep 17 00:00:00 2001
+From: Alexey Shmalko <rasen.dubi@gmail.com>
+Date: Fri, 3 Nov 2017 20:10:28 +0200
+Subject: [PATCH] Remove check for topic subscription in unicast notification
+
+---
+ .../kaa/server/common/dao/service/NotificationServiceImpl.java        | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/server/common/dao/src/main/java/org/kaaproject/kaa/server/common/dao/service/NotificationServiceImpl.java b/server/common/dao/src/main/java/org/kaaproject/kaa/server/common/dao/service/NotificationServiceImpl.java
+index b9876e694..60d247430 100644
+--- a/server/common/dao/src/main/java/org/kaaproject/kaa/server/common/dao/service/NotificationServiceImpl.java
++++ b/server/common/dao/src/main/java/org/kaaproject/kaa/server/common/dao/service/NotificationServiceImpl.java
+@@ -279,10 +279,6 @@ public class NotificationServiceImpl implements NotificationService {
+                 if(ep == null){
+                     throw new DatabaseProcessingException("Can't find endpoint profile by hash " + endpointKeyHash);
+                 }
+-                if(ep.getSubscriptions()== null || ! ep.getSubscriptions().contains(topicId)){
+-                    //TODO Error code?
+-                    throw new DatabaseProcessingException("Endpoint profile is not subscribed to this topic");
+-                }
+             } else {
+                 throw new IncorrectParameterException("Invalid endpointKeyHash: " + endpointKeyHash);
+             }
+-- 
+2.14.1
+
