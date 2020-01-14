@@ -209,6 +209,7 @@ node(selectNode()) {
                     ./gradlew dockerBuildMain
                     ./gradlew dockerPushMain -PawsAccessKeyId=${AWS_ACCESS_KEY_ID} -PawsSecretAccessKey=${AWS_SECRET_ACCESS_KEY}
                 """
+                currentVersion = LIB.version.getCurrentVersion()
             }
         }
     }
@@ -255,7 +256,7 @@ node(selectNode()) {
 
             ]) {
                 try {
-                    sh "export KAA_TAG=${LIB.version.getCurrentVersion()}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
+                    sh "export KAA_TAG=${currentVersion}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
                 } catch (e) {
                     echo "FAILED: $e"
                     saveLogs("${kaaCommit}")
