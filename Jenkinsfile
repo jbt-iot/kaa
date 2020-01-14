@@ -263,19 +263,21 @@ node(selectNode()) {
             withCredentials([usernamePassword(credentialsId: 'JBT_QA_E2E_CREDENTIALS_PROD', usernameVariable: 'JBT_QA_E2E_USER', passwordVariable: 'JBT_QA_E2E_PASS'),
                              usernamePassword(credentialsId: 'KAA_CREDS_STAGE', usernameVariable: 'JBT_QA_E2E_KAA_USERNAME', passwordVariable: 'JBT_QA_E2E_KAA_PASSWORD'),
                              usernamePassword(credentialsId: 'KAA_CREDS_STAGE', usernameVariable: 'KAA_USERNAME', passwordVariable: 'KAA_PASSWORD'),
-                             string(credentialsId: '5b51337c-78c3-4677-9153-f9eca88ee8bc', variable: 'AWS_ACCESS_KEY_ID'),
-                             string(credentialsId: 'd27d9f8f-018d-4ed0-ac7b-749e21721e64', variable: 'AWS_SECRET_ACCESS_KEY'),
-                             string(credentialsId: '5a2efc62-9fbc-4096-9bd0-719d30cd7f2b', variable: 'AWS_DEFAULT_REGION'),
-                             string(credentialsId: '5a2efc62-9fbc-4096-9bd0-719d30cd7f2b', variable: 'AWS_REGION'),
+
                              string(credentialsId: 'ARTIFACTORY_PASS', variable: 'ARTIFACTORY_PASS'),
                              string(credentialsId: 'JBT_QA_E2E_KAA_PASSWORD', variable: 'KAA_PASSWORD'),
 
             ]) {
-                sh "export KAA_TAG=${kaaTag}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
+                try {
+                    sh "export KAA_TAG=${kaaTag}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
+                } catch (e) {
+                    echo "FAILED: $e"
+                    saveLogs("${kaaCommit}")
+                    sh "export JBT_BACKEND_DIR=`cd ../jbt-backend;pwd`; docker-compose --project-name ${kaaCommit} down -t 1 || true"
+                    throw e
+                }
             }
-
         }
-
     }
 
     stage('e2e vs local env') {
@@ -288,17 +290,15 @@ node(selectNode()) {
             dir('jbt-qa-e2e') {
 
                 withCredentials([usernamePassword(credentialsId: 'JBT_QA_E2E_CREDENTIALS_PROD', usernameVariable: 'JBT_QA_E2E_USER', passwordVariable: 'JBT_QA_E2E_PASS'),
-                                 string(credentialsId: '5b51337c-78c3-4677-9153-f9eca88ee8bc', variable: 'AWS_ACCESS_KEY_ID'),
-                                 string(credentialsId: 'd27d9f8f-018d-4ed0-ac7b-749e21721e64', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                 string(credentialsId: '5a2efc62-9fbc-4096-9bd0-719d30cd7f2b', variable: 'AWS_DEFAULT_REGION'),
-                                 string(credentialsId: '5a2efc62-9fbc-4096-9bd0-719d30cd7f2b', variable: 'AWS_REGION'),
                                  string(credentialsId: 'ARTIFACTORY_PASS', variable: 'ARTIFACTORY_PASS'),
                                  string(credentialsId: 'JBT_QA_E2E_KAA_PASSWORD', variable: 'JBT_QA_E2E_KAA_PASSWORD'),
 
                 ]) {
                     timeout(30) {
                         sh """#!/bin/bash
-          
+                        
+                        ./mkenv.sh /stage
+                        
                         export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
                         export JBT_QA_E2E_KAA_HOST='localhost'
                         export JBT_QA_E2E_KAA_PORT='7777'
