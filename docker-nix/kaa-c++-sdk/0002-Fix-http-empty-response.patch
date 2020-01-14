@@ -1,0 +1,28 @@
+From 90db81cf565d445328decf36d2f3ddc4e15b495a Mon Sep 17 00:00:00 2001
+From: mshmalko <mshmalko@kaaiot.io>
+Date: Wed, 27 Jun 2018 12:57:35 +0300
+Subject: [PATCH] Fix http empty response
+
+---
+ client/client-multi/client-cpp/impl/http/HttpClient.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/client/client-multi/client-cpp/impl/http/HttpClient.cpp b/client/client-multi/client-cpp/impl/http/HttpClient.cpp
+index 7b27245..c9cfa18 100644
+--- a/client/client-multi/client-cpp/impl/http/HttpClient.cpp
++++ b/client/client-multi/client-cpp/impl/http/HttpClient.cpp
+@@ -82,6 +82,11 @@ std::shared_ptr<IHttpResponse> HttpClient::sendRequest(const IHttpRequest& reque
+         responseStream << &responseBuf;
+     }
+ 
++    if (!responseStream.str().size()) {
++        doSocketClose();
++        throw TransportException(boost::asio::error::try_again);
++    }
++
+     checkError(errorCode);
+ 
+     KAA_LOG_INFO(boost::format("Received response from server %s:%d")
+-- 
+2.7.4
+

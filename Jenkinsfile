@@ -198,33 +198,20 @@ node(selectNode()) {
             }
         }
     }
-
     stage('build kaa docker') {
         if (isPR()) {
             echo "skip build kaa docker for PR builds"
             return
         }
-        withCredentials([string(credentialsId: 'ARTIFACTORY_PASS', variable: 'ARTIFACTORY_PASS')]) {
-            dir('jbt-infrastructure') {
-                sh """#!/bin/bash
-                    set -e
-                    set -x
-                    cd nix
-        
-                    `aws ecr get-login --region us-east-1 --no-include-email`
-        
-                    cp ../../kaa/server/node/target/kaa-node.deb .
-                    cp ../../kaa/server/node/target/sdk/cpp/kaa-cpp-ep-sdk-0.9.0.tar.gz .
-        
-                    docker build -t 138150065595.dkr.ecr.us-east-1.amazonaws.com/kaa:${kaaTag} .
-                    docker push 138150065595.dkr.ecr.us-east-1.amazonaws.com/kaa:${kaaTag}
-        
-                    docker build -t 138150065595.dkr.ecr.us-east-1.amazonaws.com/kaa:${kaaBranch} .
-                    docker push 138150065595.dkr.ecr.us-east-1.amazonaws.com/kaa:${kaaBranch}
-            """
+        withCredentials([usernamePassword(credentialsId: 'AWS_PROVISIONER', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+            dir('kaa') {
+                sh """
+                    ./gradlew dockerBuildMain
+                    ./gradlew dockerPushMain -PawsAccessKeyId=${AWS_ACCESS_KEY_ID} -PawsSecretAccessKey=${AWS_SECRET_ACCESS_KEY}
+                """
+                currentVersion = LIB.version.getCurrentVersion()
             }
         }
-
     }
 
     stage('push kaa sdk to artifactory') {
@@ -269,7 +256,7 @@ node(selectNode()) {
 
             ]) {
                 try {
-                    sh "export KAA_TAG=${kaaTag}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
+                    sh "export KAA_TAG=${currentVersion}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
                 } catch (e) {
                     echo "FAILED: $e"
                     saveLogs("${kaaCommit}")

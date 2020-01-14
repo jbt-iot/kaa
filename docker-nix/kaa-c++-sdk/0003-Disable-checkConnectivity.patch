@@ -1,0 +1,52 @@
+From 55801341884f39f5b70932376593d1a242de65c9 Mon Sep 17 00:00:00 2001
+From: mshmalko <mshmalko@kaaiot.io>
+Date: Tue, 25 Sep 2018 14:50:44 +0300
+Subject: [PATCH] Disable checkConnectivity
+
+---
+ .../client-cpp/impl/channel/impl/AbstractHttpChannel.cpp             | 5 +++--
+ .../client-cpp/impl/channel/impl/DefaultOperationTcpChannel.cpp      | 5 +++--
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/client/client-multi/client-cpp/impl/channel/impl/AbstractHttpChannel.cpp b/client/client-multi/client-cpp/impl/channel/impl/AbstractHttpChannel.cpp
+index 2d7367b69..b0aa0ca86 100644
+--- a/client/client-multi/client-cpp/impl/channel/impl/AbstractHttpChannel.cpp
++++ b/client/client-multi/client-cpp/impl/channel/impl/AbstractHttpChannel.cpp
+@@ -103,11 +103,12 @@ void AbstractHttpChannel::processTypes(const std::map<TransportType, ChannelDire
+                                                                      % e.getErrorCode().message());
+ 
+         KaaFailoverReason reason = getNotAccessibleFailoverReason(getServerType());
+-        if (connectivityChecker_ && !connectivityChecker_->checkConnectivity()) {
++        // Workaround for a case, when the agent has access only to Kaa servers.
++        /* if (connectivityChecker_ && !connectivityChecker_->checkConnectivity()) {
+             KAA_LOG_WARN(boost::format("Channel [%1%] detected loss of connectivity")
+                                                                           % getId());
+             reason = KaaFailoverReason::NO_CONNECTIVITY;
+-        }
++        }*/
+ 
+         onServerFailed(reason);
+     }
+diff --git a/client/client-multi/client-cpp/impl/channel/impl/DefaultOperationTcpChannel.cpp b/client/client-multi/client-cpp/impl/channel/impl/DefaultOperationTcpChannel.cpp
+index c2f9cf5b5..0d01b5fe4 100644
+--- a/client/client-multi/client-cpp/impl/channel/impl/DefaultOperationTcpChannel.cpp
++++ b/client/client-multi/client-cpp/impl/channel/impl/DefaultOperationTcpChannel.cpp
+@@ -659,12 +659,13 @@ void DefaultOperationTcpChannel::onServerFailed(KaaFailoverReason failoverReason
+     closeConnection();
+ 
+     KaaFailoverReason finalFailoverReason = failoverReason;
+-    if (failoverReason == KaaFailoverReason::CURRENT_OPERATIONS_SERVER_NA) {
++    // Workaround for a case, when the agent has access only to Kaa servers.
++    /*if (failoverReason == KaaFailoverReason::CURRENT_OPERATIONS_SERVER_NA) {
+         if (connectivityChecker_ && !connectivityChecker_->checkConnectivity()) {
+             KAA_LOG_INFO(boost::format("Channel [%1%] detected loss of connectivity") % getId());
+             finalFailoverReason = KaaFailoverReason::NO_CONNECTIVITY;
+         }
+-    }
++    }*/
+ 
+     KAA_LOG_WARN(boost::format("Channel [%1%] detected '%2%' failover for %3%") % getId()
+                  % LoggingUtils::toString(finalFailoverReason) % LoggingUtils::toString(*currentServer_));
+-- 
+2.14.1
+
