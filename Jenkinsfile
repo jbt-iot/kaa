@@ -134,7 +134,8 @@ node(selectNode()) {
 
                 kaaTag = "${kaaBranch}-${kaaCommit}"
 
-                currentBuild.description = "kaa: ${env.BRANCH_NAME}-${kaaCommit}"
+                sh './gradlew'
+                LIB.build.setDefaultDescription()
             }
 
             dir('jbt-infrastructure') {

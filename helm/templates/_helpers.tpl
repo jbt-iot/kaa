@@ -41,6 +41,10 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 {{- end -}}
 
+{{- define "imageTag" -}}
+{{- default .Chart.AppVersion .Values.image.tag -}}
+{{- end -}}
+
 {{/* Env values */}}
 {{- define "kaa.envVariables" -}}
 {{- with .Values.env -}}
