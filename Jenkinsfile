@@ -148,8 +148,6 @@ node(selectNode()) {
                         script: "git rev-parse ${jbtInfrastructureBranch}",
                         returnStdout: true
                 ).trim().take(8)
-
-                currentBuild.description += " inf: ${jbtInfrastructureBranch}-${bldCommit}"
             }
 
 

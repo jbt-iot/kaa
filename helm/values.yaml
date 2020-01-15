@@ -196,7 +196,7 @@ waitContainers:
   enabled: true
 
 statefulset:
-  updateStrategy: OnDelete
+  updateStrategy: RollingUpdate
 
 image:
   repository: 138150065595.dkr.ecr.us-east-1.amazonaws.com/kaa
