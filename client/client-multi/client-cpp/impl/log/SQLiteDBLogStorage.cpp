@@ -157,7 +157,7 @@ void SQLiteDBLogStorage::throwIfError(int errorCode, int expectedErrorCode, cons
 }
 
 RenameGuard::RenameGuard(IKaaClientContext &context, const std::string &dbName)
-    : errorCode_{SQLITE_OK}, dbName_{dbName}, context_{context}
+    : errorCode_{SQLITE_OK}, dbName_{dbName}, context_(context)
 {
 }
 
@@ -186,7 +186,7 @@ void RenameGuard::setErrorCode(const int errorCode)
 class SQLiteStatement {
 public:
     SQLiteStatement(sqlite3 *db, const char* sql, RenameGuard& renameGuard)
-    : renameGuard_{renameGuard}
+    : renameGuard_(renameGuard)
     {
         if (!db || !sql) {
             throw KaaException("Failed to create sqlite3 statement: bad data");
