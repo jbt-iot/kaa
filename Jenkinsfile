@@ -299,7 +299,7 @@ node(selectNode()) {
                         export JBT_QA_E2E_ELASTIC_HOST='localhost'
                         export JBT_QA_E2E_ELASTIC_PORT='9200'
 
-                        ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${ARTIFACTORY_PASS}' --info                    
+                        ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.agent.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${ARTIFACTORY_PASS}' --info                    
                     """
 
                     }
