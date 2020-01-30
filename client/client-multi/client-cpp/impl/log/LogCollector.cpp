@@ -30,6 +30,10 @@
 #include "kaa/log/LogBucket.hpp"
 #include "kaa/log/ILogDeliveryListener.hpp"
 
+#include <chrono>
+
+#include <boost/filesystem.hpp>
+
 #ifdef KAA_USE_SQLITE_LOG_STORAGE
 #include "kaa/log/SQLiteDBLogStorage.hpp"
 #else
@@ -90,7 +94,15 @@ void LogCollector::processTimeout()
 
     for (auto request = timeouts_.begin(); request != timeouts_.end();) {
         if (now >= request->second.getTimeoutTime()) {
-            storage_->rollbackBucket(request->first);
+			try
+			{
+				storage_->rollbackBucket( request->first );
+			}
+			catch ( std::exception& ex )
+			{
+				resetDBifCorrupt( std::stoi( ex.what() ) );
+			}
+
             request = timeouts_.erase(request);
         } else {
             request++;
@@ -275,7 +287,17 @@ std::shared_ptr<LogSyncRequest> LogCollector::getLogUploadRequest()
         return request;
     }
 
-    LogBucket bucket = storage_->getNextBucket();
+	LogBucket bucket;
+
+	try
+	{
+		bucket = storage_->getNextBucket();
+	}
+	catch (std::exception& ex)
+	{
+		resetDBifCorrupt(std::stoi( ex.what()));
+	}
+
     if (bucket.getRecords().empty()) {
         KAA_LOG_TRACE("No logs to send");
         return request;
@@ -316,7 +338,14 @@ void LogCollector::onLogUploadResponse(const LogSyncResponse& response, std::siz
             if (status.result == SyncResponseResultType::SUCCESS) {
                 KAA_LOG_INFO(boost::format("Logs (requestId %ld) successfully delivered") % status.requestId);
 
-                storage_->removeBucket(status.requestId);
+				try
+				{
+					storage_->removeBucket(status.requestId);
+				}
+				catch (std::exception& ex)
+				{
+					resetDBifCorrupt(std::stoi(ex.what()));
+				}
 
                 if (logDeliverylistener_) {
                     context_.getExecutorContext().getCallbackExecutor().add([this, bucketInfo] ()
@@ -447,6 +476,36 @@ void LogCollector::removeBucketInfo(std::int32_t id)
     bucketInfoStorage_.erase(id);
 
     bucketInfoStorage_.rehash(0);
+}
+
+void LogCollector::resetDBifCorrupt( const int errorCode )
+{
+	if (errorCode == SQLITE_CORRUPT)
+	{
+		auto now = std::chrono::system_clock::now();
+
+		const std::string dbNameAddPart{std::to_string( now.time_since_epoch().count() )};
+
+		const std::string dbName{context_.getProperties().getLogsDatabaseFileName()};
+
+		boost::filesystem::path dbPath(dbName);
+
+		const std::string newDBName{dbPath.branch_path().string() + "\\" + 
+			dbPath.stem().string() + dbNameAddPart + dbPath.extension().string()};
+
+		dynamic_cast<SQLiteDBLogStorage*>(storage_.get())->closeDBConnection();
+
+		if (std::rename(dbName.c_str(), newDBName.c_str()))
+		{
+			KAA_LOG_WARN(boost::format("Cannot rename '%s' to '%s'") % dbName % newDBName);
+		}
+		else
+		{
+			KAA_LOG_WARN(boost::format("DB '%s' corrupted. Renamed to '%s'") % dbName % newDBName);
+		}
+
+		storage_.reset(new SQLiteDBLogStorage( context_ ));
+	}
 }
 
 }  // namespace kaa

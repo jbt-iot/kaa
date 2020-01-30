@@ -53,20 +53,6 @@ enum SQLiteOptimizationOptions
                                  SQLITE_AUTO_VACUUM_FULL
 };
 
-class RenameGuard
-{
-public:
-    RenameGuard(IKaaClientContext &context, const std::string& dbName);
-    ~RenameGuard();
-
-    void setErrorCode(const int errorCode);
-
-private:
-    int errorCode_;
-    const std::string dbName_;
-    IKaaClientContext &context_;
-};
-
 class SQLiteDBLogStorage : public ILogStorage, public ILogStorageStatus {
 public:
     SQLiteDBLogStorage(IKaaClientContext &context,
@@ -91,11 +77,14 @@ public:
     virtual std::size_t getConsumedVolume();
     virtual std::size_t getRecordsCount();
 
+	static void throwIfError(int errorCode, int expectedErrorCode);
+
+	void closeDBConnection();
+
 private:
     void init(int optimizationMask);
 
     void openDBConnection();
-    void closeDBConnection();
 
     void initDBTables();
     void applyDBOptimization(int mask);
@@ -122,8 +111,6 @@ private:
         return (boost::format("Bucket: id %d, logs %d, size %d B")
                     % currentBucketId_ % currentBucketRecordCount_ % currentBucketSize_).str();
     }
-
-    void throwIfError(int errorCode, int expectedErrorCode, const std::string& errorMessage);
 
 private:
     struct InnerBucketInfo {
@@ -155,8 +142,6 @@ private:
     KAA_MUTEX_DECLARE(sqliteLogStorageGuard_);
 
     IKaaClientContext &context_;
-
-    RenameGuard renameGuard_;
 };
 
 } /* namespace kaa */
