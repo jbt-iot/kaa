@@ -140,7 +140,7 @@ private:
     std::unordered_map<std::int32_t/*Bucket id*/, InnerBucketInfo> consumedMemoryStorage_;
 
     KAA_MUTEX_DECLARE(sqliteLogStorageGuard_);
-
+	
     IKaaClientContext &context_;
 };
 

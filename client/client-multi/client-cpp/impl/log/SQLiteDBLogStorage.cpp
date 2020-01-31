@@ -494,7 +494,7 @@ BucketInfo SQLiteDBLogStorage::addLogRecord(LogRecord&& record)
     } catch (std::exception& e) {
 		std::string err{"Error code: " + std::string(e.what())};
         KAA_LOG_ERROR(boost::format("Failed to add log record: %s") % err);
-        throw;
+        throw KaaException(std::string("Failed to add log record: ") + err);
     }
 
     return BucketInfo(currentBucketId_, currentBucketRecordCount_);
@@ -643,6 +643,7 @@ void SQLiteDBLogStorage::rollbackBucket(std::int32_t bucketId)
         throwIfError(errorCode, SQLITE_DONE);
 
         auto it = consumedMemoryStorage_.find(bucketId);
+
         if (it != consumedMemoryStorage_.end()) {
             consumedMemory_ += it->second.sizeInBytes_;
             unmarkedRecordCount_ += it->second.sizeInLogs_;

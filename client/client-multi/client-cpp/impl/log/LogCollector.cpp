@@ -360,7 +360,14 @@ void LogCollector::onLogUploadResponse(const LogSyncResponse& response, std::siz
                             removeBucketInfo(bucketInfo.getBucketId());
                         });
             } else {
-                storage_->rollbackBucket(status.requestId);
+				try
+				{
+					storage_->rollbackBucket( status.requestId );
+				}
+				catch (std::exception& ex)
+				{
+					resetDBifCorrupt(std::stoi(ex.what()));
+				}
 
                 if (!status.errorCode.is_null()) {
                     auto errocCode = status.errorCode.get_LogDeliveryErrorCode();
@@ -414,7 +421,14 @@ void LogCollector::switchAccessPoint()
             KAA_MUTEX_UNIQUE_DECLARE(timeoutsGuardLock, timeoutsGuard_);
             KAA_MUTEX_LOCKED("timeoutsGuard_");
             for (const auto &request : timeouts_) {
-                storage_->rollbackBucket(request.first);
+				try
+				{
+					storage_->rollbackBucket( request.first );
+				}
+				catch (std::exception& ex)
+				{
+					resetDBifCorrupt(std::stoi(ex.what()));
+				}
             }
             timeouts_.clear();
             timeouts_.rehash(0);
@@ -478,13 +492,13 @@ void LogCollector::removeBucketInfo(std::int32_t id)
     bucketInfoStorage_.rehash(0);
 }
 
-void LogCollector::resetDBifCorrupt( const int errorCode )
+void LogCollector::resetDBifCorrupt(const int errorCode)
 {
 	if (errorCode == SQLITE_CORRUPT)
 	{
 		auto now = std::chrono::system_clock::now();
 
-		const std::string dbNameAddPart{std::to_string( now.time_since_epoch().count() )};
+		const std::string dbNameAddPart{std::to_string(now.time_since_epoch().count())};
 
 		const std::string dbName{context_.getProperties().getLogsDatabaseFileName()};
 
