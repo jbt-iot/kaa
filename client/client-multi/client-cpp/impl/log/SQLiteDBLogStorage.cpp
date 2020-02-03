@@ -147,10 +147,10 @@
 
 namespace kaa {
 
-void SQLiteDBLogStorage::throwIfError(int errorCode, int expectedErrorCode)
+void SQLiteDBLogStorage::throwIfError(const int errorCode, const int expectedErrorCode)
 {
     if (errorCode != expectedErrorCode) {
-        throw std::exception(std::to_string(errorCode).c_str());
+        throw KaaSqlDbException( errorCode );
     }
 }
 
@@ -323,8 +323,7 @@ void SQLiteDBLogStorage::initDBTables()
 
         //TODO: to increase performance need to create indexes on DB tables.
     } catch (std::exception& e) {
-		std::string err{"Error code: " + std::string(e.what())};
-        KAA_LOG_FATAL(boost::format("Failed to init log table: %s") % err);
+        KAA_LOG_FATAL(boost::format("Failed to init log table: %s") % e.what());
         throw;
     }
 }
@@ -371,8 +370,7 @@ void SQLiteDBLogStorage::markBucketsAsFree()
 
         KAA_LOG_INFO(boost::format("Mark %1% bucket(s) as free") % sqlite3_changes(db_));
     } catch (std::exception& e) {
-		std::string err{"Error code: " + std::string(e.what())};
-        KAA_LOG_FATAL(boost::format("Failed to mark bucket(s) as free: %s") % err);
+        KAA_LOG_FATAL(boost::format("Failed to mark bucket(s) as free: %s") % e.what());
         throw;
     }
 }
@@ -392,8 +390,7 @@ void SQLiteDBLogStorage::markBucketAsInUse(std::int32_t id)
 
         KAA_LOG_TRACE(boost::format("Mark log bucket %d as in use") % id);
     } catch (std::exception& e) {
-		std::string err{"Error code: " + std::string(e.what())};
-        KAA_LOG_ERROR(boost::format("Failed to mark log bucket %d as in use: %s") % id % err);
+        KAA_LOG_ERROR(boost::format("Failed to mark log bucket %d as in use: %s") % id % e.what());
         throw;
     }
 }
@@ -492,9 +489,8 @@ BucketInfo SQLiteDBLogStorage::addLogRecord(LogRecord&& record)
         KAA_LOG_TRACE(boost::format("Log record (%d bytes) added to %s. %s")
                                         % record.getSize() % bucketStatisticsToStr() % storageStatisticsToStr());
     } catch (std::exception& e) {
-		std::string err{"Error code: " + std::string(e.what())};
-        KAA_LOG_ERROR(boost::format("Failed to add log record: %s") % err);
-        throw KaaException(std::string("Failed to add log record: ") + err);
+        KAA_LOG_ERROR(boost::format("Failed to add log record: %s") % e.what());
+        throw KaaException(std::string("Failed to add log record: ") +e.what());
     }
 
     return BucketInfo(currentBucketId_, currentBucketRecordCount_);
@@ -573,8 +569,7 @@ LogBucket SQLiteDBLogStorage::getNextBucket()
 
         return LogBucket(bucketId, std::move(records));
     } catch (std::exception& e) {
-		std::string err{"Error code: " + std::string(e.what())};
-        KAA_LOG_ERROR(boost::format("Failed to get log bucket: %s") % err);
+        KAA_LOG_ERROR(boost::format("Failed to get log bucket: %s") % e.what());
         throw;
     }
 
@@ -618,9 +613,8 @@ void SQLiteDBLogStorage::removeBucket(std::int32_t bucketId)
         KAA_LOG_INFO(boost::format("Removed %d log records, bucket id %d. %s")
                                     % removedRecordsCount % bucketId % storageStatisticsToStr());
     } catch (std::exception& e) {
-		std::string err{"Error code: " + std::string(e.what())};
         KAA_LOG_ERROR(boost::format("Failed to remove log bucket/records by bucket id %d: %s")
-                                                                        % bucketId % err);
+                                                                        % bucketId % e.what());
         throw;
     }
 }
@@ -654,9 +648,8 @@ void SQLiteDBLogStorage::rollbackBucket(std::int32_t bucketId)
 
         KAA_LOG_INFO(boost::format("Bucket %d is rolled back. %s") % bucketId % storageStatisticsToStr());
     } catch (std::exception& e) {
-		std::string err{"Error code: " + std::string(e.what())};
-        KAA_LOG_ERROR(boost::format("Failed to roll back bucket %d: %s") % bucketId % err);
-		throw;
+        KAA_LOG_ERROR(boost::format("Failed to roll back bucket %d: %s") % bucketId % e.what());
+        throw;
     }
 }
 
@@ -703,8 +696,7 @@ void SQLiteDBLogStorage::addNextBucket()
 
         KAA_LOG_DEBUG(boost::format("Add new bucket. %s") % bucketStatisticsToStr());
     } catch (std::exception& e) {
-		std::string err{"Error code: " + std::string(e.what())};
-        KAA_LOG_ERROR(boost::format("Failed to add new bucket into database: %s") % err);
+        KAA_LOG_ERROR(boost::format("Failed to add new bucket into database: %s") % e.what());
         throw;
     }
 }

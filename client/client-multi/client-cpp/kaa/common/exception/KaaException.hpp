@@ -127,6 +127,29 @@ private:
      }
 };
 
+class KaaSqlDbException : public std::exception {
+    public:
+    explicit KaaSqlDbException( const int errId ) : errorId_(errId) {
+        std::stringstream ss;
+        ss << "SQL database operation interrupted with error code: " << errorId_;
+        message_ = ss.str();
+    }
+
+    virtual const char * what() const throw() {
+        return message_.c_str();
+    }
+
+    int errorId() {
+        return errorId_;
+    }
+
+    virtual ~KaaSqlDbException() noexcept = default;
+
+private:
+    int errorId_;
+    std::string message_;
+};
+
 }  // namespace kaa
 
 

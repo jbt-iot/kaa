@@ -77,9 +77,9 @@ public:
     virtual std::size_t getConsumedVolume();
     virtual std::size_t getRecordsCount();
 
-	static void throwIfError(int errorCode, int expectedErrorCode);
+    static void throwIfError(const int errorCode, const int expectedErrorCode);
 
-	void closeDBConnection();
+    void closeDBConnection();
 
 private:
     void init(int optimizationMask);
