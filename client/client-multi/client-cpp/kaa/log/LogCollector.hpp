@@ -144,6 +144,8 @@ private:
     void notifyDeliveryFuturesOnSuccess(std::int32_t bucketId, std::size_t deliveryTime);
     void removeBucketInfo(std::int32_t);
 
+	void resetDBifCorrupt(const int errorCode, const std::string& errMessage);
+
 private:
     ILogStoragePtr           storage_;
     ILogUploadStrategyPtr    uploadStrategy_;
