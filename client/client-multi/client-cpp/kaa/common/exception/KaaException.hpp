@@ -129,9 +129,9 @@ private:
 
 class KaaSqlDbException : public std::exception {
     public:
-    explicit KaaSqlDbException( const int errId ) : errorId_(errId) {
+    explicit KaaSqlDbException( const int errId, const std::string& errMessage ) : errorId_(errId) {
         std::stringstream ss;
-        ss << "SQL database operation interrupted with error code: " << errorId_;
+        ss << "SQL database operation interrupted. " << errMessage << " Error code: " << errorId_;
         message_ = ss.str();
     }
 

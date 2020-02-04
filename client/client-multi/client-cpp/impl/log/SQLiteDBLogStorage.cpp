@@ -147,10 +147,10 @@
 
 namespace kaa {
 
-void SQLiteDBLogStorage::throwIfError(const int errorCode, const int expectedErrorCode)
+void SQLiteDBLogStorage::throwIfError(const int errorCode, const int expectedErrorCode, const std::string& errMessage)
 {
     if (errorCode != expectedErrorCode) {
-        throw KaaSqlDbException( errorCode );
+        throw KaaSqlDbException( errorCode, errMessage );
     }
 }
 
@@ -164,7 +164,7 @@ public:
 
         int errorCode = sqlite3_prepare_v2(db, sql, -1, &stmt_, nullptr);
 
-        SQLiteDBLogStorage::throwIfError(errorCode, SQLITE_OK);
+        SQLiteDBLogStorage::throwIfError(errorCode, SQLITE_OK, "Failed to create sqlite3 statement: bad data" );
     }
 
     ~SQLiteStatement()
@@ -309,7 +309,7 @@ void SQLiteDBLogStorage::initDBTables()
         KAA_LOG_TRACE(boost::format("Step start 1: %s") % "void SQLiteDBLogStorage::initDBTables()");
         int errorCode = sqlite3_step(createBucketsTableStmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop 1: %s") % "void SQLiteDBLogStorage::initDBTables()");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, boost::format("Failed to create '" KAA_BUCKETS_TABLE_NAME "' table").str());
 
         KAA_LOG_TRACE("'" KAA_BUCKETS_TABLE_NAME "' table created");
 
@@ -317,7 +317,7 @@ void SQLiteDBLogStorage::initDBTables()
         KAA_LOG_TRACE(boost::format("Step start 2: %s") % "void SQLiteDBLogStorage::initDBTables()");
         errorCode = sqlite3_step(createLogsTableStmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop 2: %s") % "void SQLiteDBLogStorage::initDBTables()");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, boost::format("Failed to create '" KAA_LOGS_TABLE_NAME "' table").str());
 
         KAA_LOG_TRACE("'" KAA_LOGS_TABLE_NAME "' table created");
 
@@ -366,7 +366,7 @@ void SQLiteDBLogStorage::markBucketsAsFree()
         KAA_LOG_TRACE(boost::format("Step start: %s") % "void SQLiteDBLogStorage::markBucketsAsFree()");
         int errorCode = sqlite3_step(stmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop: %s") % "void SQLiteDBLogStorage::markBucketsAsFree()");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "Failed to mark bucket as free");
 
         KAA_LOG_INFO(boost::format("Mark %1% bucket(s) as free") % sqlite3_changes(db_));
     } catch (std::exception& e) {
@@ -381,12 +381,12 @@ void SQLiteDBLogStorage::markBucketAsInUse(std::int32_t id)
         SQLiteStatement stmt(db_, KAA_MARK_LOG_BUCKET_AS_IN_USE);
 
         int errorCode = sqlite3_bind_int64(stmt.getStatement(), 1, id);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind bucket id");
 
         KAA_LOG_TRACE(boost::format("Step start: %s") % "void SQLiteDBLogStorage::markBucketAsInUse(std::int32_t id)");
         errorCode = sqlite3_step(stmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop: %s") % "void SQLiteDBLogStorage::markBucketAsInUse(std::int32_t id)");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "failed to mark bucket as in use");
 
         KAA_LOG_TRACE(boost::format("Mark log bucket %d as in use") % id);
     } catch (std::exception& e) {
@@ -414,7 +414,7 @@ void SQLiteDBLogStorage::openDBConnection()
                 KAA_LOG_ERROR(boost::format("Cannot delete corrupted '%s' log database") % dbName_);
             }
         }
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to open DB connection");
         break;
     }
 
@@ -456,28 +456,28 @@ BucketInfo SQLiteDBLogStorage::addLogRecord(LogRecord&& record)
         SQLiteStatement insertLogRecordStmt(db_, KAA_INSERT_NEW_RECORD_IN_BUCKET);
 
         int errorCode = sqlite3_bind_int(insertLogRecordStmt.getStatement(), 1, currentBucketId_);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind bucket id of log record");
 
         errorCode = sqlite3_bind_blob(insertLogRecordStmt.getStatement(), 2, record.getData().data(), record.getSize(), SQLITE_STATIC);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind log record data");
 
         SQLiteStatement updateBucketInfoStmt(db_, KAA_UPDATE_BUCKET_INFO);
 
         errorCode = sqlite3_bind_int(updateBucketInfoStmt.getStatement(), 1, record.getSize());
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind log record size");
 
         errorCode = sqlite3_bind_int(updateBucketInfoStmt.getStatement(), 2, currentBucketId_);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind bucket id");
 
         KAA_LOG_TRACE(boost::format("Step start 1: %s") % "BucketInfo SQLiteDBLogStorage::addLogRecord(LogRecord&& record)");
         errorCode = sqlite3_step(insertLogRecordStmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop 1: %s") % "BucketInfo SQLiteDBLogStorage::addLogRecord(LogRecord&& record)");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "Failed to execute insert log record query");
 
         KAA_LOG_TRACE(boost::format("Step start 2: %s") % "BucketInfo SQLiteDBLogStorage::addLogRecord(LogRecord&& record)");
         errorCode = sqlite3_step(updateBucketInfoStmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop 2: %s") % "BucketInfo SQLiteDBLogStorage::addLogRecord(LogRecord&& record)");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "Failed to execute update log bucket query");
 
         ++unmarkedRecordCount_;
         ++totalRecordCount_;
@@ -513,7 +513,7 @@ LogBucket SQLiteDBLogStorage::getNextBucket()
             return LogBucket();
         }
 
-        throwIfError(errorCode, SQLITE_ROW);
+        throwIfError(errorCode, SQLITE_ROW, "Failed to get the oldest unused log bucket");
 
         std::int32_t bucketId = sqlite3_column_int64(getOldestBucketStmt.getStatement(), 1);
         std::size_t bucketSizeInRecords = sqlite3_column_int64(getOldestBucketStmt.getStatement(), 2);
@@ -539,7 +539,7 @@ LogBucket SQLiteDBLogStorage::getNextBucket()
         SQLiteStatement getBucketLogRecordsStmt(db_, KAA_SELECT_BUCKET_LOG_RECORDS);
 
         errorCode = sqlite3_bind_int(getBucketLogRecordsStmt.getStatement(), 1, bucketId);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind log bucket id");
 
         std::list<LogRecord> records;
 
@@ -551,7 +551,7 @@ LogBucket SQLiteDBLogStorage::getNextBucket()
         }
         KAA_LOG_TRACE(boost::format("Step stop while: %s") % "LogBucket SQLiteDBLogStorage::getNextBucket()");
 
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "Failed to execute select bucket log records");
 
         markBucketAsInUse(bucketId);
 
@@ -583,12 +583,12 @@ void SQLiteDBLogStorage::removeBucket(std::int32_t bucketId)
         SQLiteStatement deleteBucketStmt(db_, KAA_DELETE_BUCKET);
 
         int errorCode = sqlite3_bind_int64(deleteBucketStmt.getStatement(), 1, bucketId);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind bucket id");
 
         SQLiteStatement deleteBucketRecordsStmt(db_, KAA_DELETE_BUCKET_RECORDS);
 
         errorCode = sqlite3_bind_int64(deleteBucketRecordsStmt.getStatement(), 1, bucketId);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind bucket id");
 
         KAA_MUTEX_LOCKING("sqliteLogStorageGuard_");
         KAA_MUTEX_UNIQUE_DECLARE(storageGuardLock, sqliteLogStorageGuard_);
@@ -597,12 +597,12 @@ void SQLiteDBLogStorage::removeBucket(std::int32_t bucketId)
         KAA_LOG_TRACE(boost::format("Step start 1: %s") % "void SQLiteDBLogStorage::removeBucket(std::int32_t bucketId)");
         errorCode = sqlite3_step(deleteBucketStmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop 1: %s") % "void SQLiteDBLogStorage::removeBucket(std::int32_t bucketId)");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "Failed to execute delete bucket info");
 
         KAA_LOG_TRACE(boost::format("Step start 2: %s") % "void SQLiteDBLogStorage::removeBucket(std::int32_t bucketId)");
         errorCode = sqlite3_step(deleteBucketRecordsStmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop 2: %s") % "void SQLiteDBLogStorage::removeBucket(std::int32_t bucketId)");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "Failed to execute delete bucket logs");
 
         auto removedRecordsCount = sqlite3_changes(db_);
         totalRecordCount_ -= removedRecordsCount;
@@ -625,7 +625,7 @@ void SQLiteDBLogStorage::rollbackBucket(std::int32_t bucketId)
         SQLiteStatement stmt(db_, KAA_MARK_BUCKET_AS_FREE);
 
         int errorCode = sqlite3_bind_int64(stmt.getStatement(), 1, bucketId);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind bucket id");
 
         KAA_MUTEX_LOCKING("sqliteLogStorageGuard_");
         KAA_MUTEX_UNIQUE_DECLARE(storageGuardLock, sqliteLogStorageGuard_);
@@ -634,7 +634,7 @@ void SQLiteDBLogStorage::rollbackBucket(std::int32_t bucketId)
         KAA_LOG_TRACE(boost::format("Step start: %s") % "void SQLiteDBLogStorage::rollbackBucket(std::int32_t bucketId)");
         errorCode = sqlite3_step(stmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop: %s") % "void SQLiteDBLogStorage::rollbackBucket(std::int32_t bucketId)");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "Failed to execute update bucket in-use flag");
 
         auto it = consumedMemoryStorage_.find(bucketId);
 
@@ -684,12 +684,12 @@ void SQLiteDBLogStorage::addNextBucket()
         SQLiteStatement insertStmt(db_, KAA_INSERT_NEW_BUCKET);
 
         int errorCode = sqlite3_bind_int(insertStmt.getStatement(), 1, newBucketId);
-        throwIfError(errorCode, SQLITE_OK);
+        throwIfError(errorCode, SQLITE_OK, "Failed to bind bucket id");
 
         KAA_LOG_TRACE(boost::format("Step start: %s") % "void SQLiteDBLogStorage::addNextBucket()");
         errorCode = sqlite3_step(insertStmt.getStatement());
         KAA_LOG_TRACE(boost::format("Step stop: %s") % "void SQLiteDBLogStorage::addNextBucket()");
-        throwIfError(errorCode, SQLITE_DONE);
+        throwIfError(errorCode, SQLITE_DONE, "Failed to execute insert new bucket");
 
         currentBucketId_ = newBucketId;
         currentBucketSize_ = currentBucketRecordCount_ = 0;

@@ -100,7 +100,7 @@ void LogCollector::processTimeout()
             }
             catch ( KaaSqlDbException& ex )
             {
-                resetDBifCorrupt(ex.errorId());
+                resetDBifCorrupt(ex.errorId(), ex.what());
             }
             catch ( std::exception& ex )
             {
@@ -298,7 +298,7 @@ std::shared_ptr<LogSyncRequest> LogCollector::getLogUploadRequest()
     }
     catch (KaaSqlDbException& ex)
     {
-    resetDBifCorrupt(ex.errorId());
+        resetDBifCorrupt(ex.errorId(), ex.what());
     }
     catch(std::exception& ex)
     {
@@ -351,7 +351,7 @@ void LogCollector::onLogUploadResponse(const LogSyncResponse& response, std::siz
                 }
                 catch (KaaSqlDbException& ex)
                 {
-                    resetDBifCorrupt(ex.errorId());
+                    resetDBifCorrupt(ex.errorId(), ex.what());
                 }
                 catch ( std::exception& ex )
                 {
@@ -377,7 +377,7 @@ void LogCollector::onLogUploadResponse(const LogSyncResponse& response, std::siz
                 }
                 catch (KaaSqlDbException& ex)
                 {
-                    resetDBifCorrupt(ex.errorId());
+                    resetDBifCorrupt(ex.errorId(), ex.what());
                 }
                 catch ( std::exception& ex)
                 {
@@ -442,7 +442,7 @@ void LogCollector::switchAccessPoint()
                 }
                 catch (KaaSqlDbException& ex)
                 {
-                    resetDBifCorrupt(ex.errorId());
+                    resetDBifCorrupt(ex.errorId(), ex.what());
                 }
                 catch ( std::exception& ex )
                 {
@@ -511,8 +511,10 @@ void LogCollector::removeBucketInfo(std::int32_t id)
     bucketInfoStorage_.rehash(0);
 }
 
-void LogCollector::resetDBifCorrupt( const int errorCode )
+void LogCollector::resetDBifCorrupt( const int errorCode, const std::string& errMessage )
 {
+    KAA_LOG_ERROR( errMessage );
+
     if (errorCode == SQLITE_CORRUPT)
     {
         auto now = std::chrono::system_clock::now();
