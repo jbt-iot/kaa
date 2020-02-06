@@ -525,12 +525,14 @@ void LogCollector::resetDBifCorrupt( const int errorCode, const std::string& err
 
         boost::filesystem::path dbPath(dbName);
 
-        const std::string newDBName{dbPath.branch_path().string() + "\\" + 
+        boost::filesystem::path newDBName{dbPath.branch_path().string() + "\\" + 
         dbPath.stem().string() + dbNameAddPart + dbPath.extension().string()};
+
+        newDBName.make_preferred();
 
         dynamic_cast<SQLiteDBLogStorage*>(storage_.get())->closeDBConnection();
 
-        if (std::rename(dbName.c_str(), newDBName.c_str()))
+        if (std::rename(dbName.c_str(), newDBName.string().c_str()))
         {
             KAA_LOG_WARN(boost::format("Cannot rename '%s' to '%s'") % dbName % newDBName);
         }
