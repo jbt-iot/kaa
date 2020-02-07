@@ -525,7 +525,9 @@ void LogCollector::resetDBifCorrupt( const int errorCode, const std::string& err
 
         boost::filesystem::path dbPath(dbName);
 
-        const std::string newDBName{dbPath.branch_path().string() + "\\" + 
+        boost::filesystem::path separator{boost::filesystem::path::string_type{dbPath.preferred_separator}};
+
+        const std::string newDBName{dbPath.branch_path().string() + separator.string() + 
         dbPath.stem().string() + dbNameAddPart + dbPath.extension().string()};
 
         dynamic_cast<SQLiteDBLogStorage*>(storage_.get())->closeDBConnection();
