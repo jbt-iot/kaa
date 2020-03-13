@@ -192,11 +192,11 @@ node(selectNode()) {
             env.JBT_QA_E2E_USER = LIB.awsssm.getParameterByName("/prod/web_app_admin_username")
             env.JBT_QA_E2E_PASS = LIB.awsssm.getParameterByName("/prod/web_app_admin_password")
 
-            env.JBT_QA_E2E_KAA_USERNAME = LIB.awsssm.getParameterByName("/stage/kaa_username")
-            env.JBT_QA_E2E_KAA_PASSWORD = LIB.awsssm.getParameterByName("/stage/kaa_password")
+            env.JBT_QA_E2E_KAA_USERNAME = LIB.awsssm.getParameterByName("/prod/kaa_username")
+            env.JBT_QA_E2E_KAA_PASSWORD = LIB.awsssm.getParameterByName("/prod/kaa_password")
 
-            env.KAA_USERNAME = LIB.awsssm.getParameterByName("/stage/kaa_username")
-            env.KAA_PASSWORD = LIB.awsssm.getParameterByName("/stage/kaa_password")
+            env.KAA_USERNAME = LIB.awsssm.getParameterByName("/prod/kaa_username")
+            env.KAA_PASSWORD = LIB.awsssm.getParameterByName("/prod/kaa_password")
         }
     }
 
@@ -282,7 +282,7 @@ node(selectNode()) {
                 timeout(30) {
                     sh """#!/bin/bash
                     
-                    ./mkenv.sh /stage
+                    ./mkenv.sh /prod
                     
                     export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
                     export JBT_QA_E2E_KAA_HOST='localhost'
@@ -293,12 +293,12 @@ node(selectNode()) {
                     export JBT_QA_E2E_S3_REPORT_BUCKET='jbt-qa-it-tag-images'
                     export JBT_QA_E2E_S3_REPORT_PREFIX='reports'
                     export JBT_QA_E2E_S3_UPLOADER_BUCKET='jbt-qa-it-tag-images'
-                    export BT_QA_E2E_S3_UPLOADER_PREFIX='binary'
+                    export JBT_QA_E2E_S3_UPLOADER_PREFIX='binary'
                     export JBT_QA_E2E_ELASTIC_PROTOCOL='http'
                     export JBT_QA_E2E_ELASTIC_HOST='localhost'
                     export JBT_QA_E2E_ELASTIC_PORT='9200'
 
-                    ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.agent.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${ARTIFACTORY_PASS}' --info                    
+                    ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.agent.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${env.ARTIFACTORY_PASS}' --info                    
                 """
                 }
 
