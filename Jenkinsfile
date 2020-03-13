@@ -194,8 +194,9 @@ node(selectNode()) {
 
             env.JBT_QA_E2E_KAA_USERNAME = LIB.awsssm.getParameterByName("/stage/kaa_username")
             env.JBT_QA_E2E_KAA_PASSWORD = LIB.awsssm.getParameterByName("/stage/kaa_password")
-            env.KAA_PASSWORD = LIB.awsssm.getParameterByName("/stage/kaa_password")
 
+            env.KAA_USERNAME = LIB.awsssm.getParameterByName("/stage/kaa_username")
+            env.KAA_PASSWORD = LIB.awsssm.getParameterByName("/stage/kaa_password")
         }
     }
 
