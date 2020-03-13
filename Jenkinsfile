@@ -1,4 +1,4 @@
-@Library('jbt-shared-lib@29872b4d') _
+@Library('jbt-shared-lib@v0.1.20') _
 
 import com.jbt.jenkins.Container
 
@@ -183,6 +183,19 @@ node(selectNode()) {
                 )
             }
 
+            env.ARTIFACTORY_USER = LIB.awsssm.getParameterByName("/infra/artifactory_username")
+            env.ARTIFACTORY_PASS = LIB.awsssm.getParameterByName("/infra/artifactory_password")
+
+            env.AWS_PROVISIONER_AWS_ACCESS_KEY = LIB.awsssm.getParameterByName("/infra/aws_provisioner_aws_access_key")
+            env.AWS_PROVISIONER_AWS_SECRET_KEY = LIB.awsssm.getParameterByName("/infra/aws_provisioner_aws_secret_key")
+
+            env.JBT_QA_E2E_USER = LIB.awsssm.getParameterByName("/prod/web_app_admin_username")
+            env.JBT_QA_E2E_PASS = LIB.awsssm.getParameterByName("/prod/web_app_admin_password")
+
+            env.JBT_QA_E2E_KAA_USERNAME = LIB.awsssm.getParameterByName("/stage/kaa_username")
+            env.JBT_QA_E2E_KAA_PASSWORD = LIB.awsssm.getParameterByName("/stage/kaa_password")
+            env.KAA_PASSWORD = LIB.awsssm.getParameterByName("/stage/kaa_password")
+
         }
     }
 
@@ -202,14 +215,13 @@ node(selectNode()) {
             echo "skip build kaa docker for PR builds"
             return
         }
-        withCredentials([usernamePassword(credentialsId: 'AWS_PROVISIONER', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-            dir('kaa') {
-                sh """
-                    ./gradlew dockerBuildMain
-                    ./gradlew dockerPushMain -PawsAccessKeyId=${AWS_ACCESS_KEY_ID} -PawsSecretAccessKey=${AWS_SECRET_ACCESS_KEY}
-                """
-                currentVersion = LIB.version.getCurrentVersion()
-            }
+
+        dir('kaa') {
+            sh """
+                ./gradlew dockerBuildMain
+                ./gradlew dockerPushMain -PawsAccessKeyId=${env.AWS_PROVISIONER_AWS_ACCESS_KEY} -PawsSecretAccessKey=${env.AWS_PROVISIONER_AWS_SECRET_KEY}
+            """
+            currentVersion = LIB.version.getCurrentVersion()
         }
     }
 
@@ -218,19 +230,19 @@ node(selectNode()) {
             echo "skip build kaa docker for PR builds"
             return
         }
-        withCredentials([string(credentialsId: 'ARTIFACTORY_PASS', variable: 'ARTIFACTORY_PASS')]) {
-            dir('kaa') {
-                sh """#!/bin/bash
-                    set -ex
-                    tarMD5=`md5sum ./server/node/target/sdk/cpp/kaa-cpp-ep-sdk-0.9.0.tar.gz | awk '{print \$1}'`
-                    
-                    ARTIFACTORY_URL="http://artifactory.jbt-iops.com:8081/artifactory/example-repo-local"
-                    
-                    curl -uadmin:${ARTIFACTORY_PASS} --upload-file ./server/node/target/sdk/cpp/kaa-cpp-ep-sdk-0.9.0.tar.gz --header "X-Checksum-MD5:\${tarMD5}" "\${ARTIFACTORY_URL}/kaa-sdk/kaa-cpp-ep-sdk-${kaaTag}.tar.gz"
-            
-            """
-            }
+
+        dir('kaa') {
+            sh """#!/bin/bash
+                set -ex
+                tarMD5=`md5sum ./server/node/target/sdk/cpp/kaa-cpp-ep-sdk-0.9.0.tar.gz | awk '{print \$1}'`
+                
+                ARTIFACTORY_URL="http://artifactory.jbt-iops.com:8081/artifactory/example-repo-local"
+                
+                curl -u${env.ARTIFACTORY_USER}:${env.ARTIFACTORY_PASS} --upload-file ./server/node/target/sdk/cpp/kaa-cpp-ep-sdk-0.9.0.tar.gz --header "X-Checksum-MD5:\${tarMD5}" "\${ARTIFACTORY_URL}/kaa-sdk/kaa-cpp-ep-sdk-${kaaTag}.tar.gz"
+        
+        """
         }
+
 
     }
 
@@ -246,22 +258,13 @@ node(selectNode()) {
         }
 
         dir('jbt-kaa-agent-builder') {
-            withCredentials([usernamePassword(credentialsId: 'JBT_QA_E2E_CREDENTIALS_PROD', usernameVariable: 'JBT_QA_E2E_USER', passwordVariable: 'JBT_QA_E2E_PASS'),
-                             usernamePassword(credentialsId: 'KAA_CREDS_STAGE', usernameVariable: 'JBT_QA_E2E_KAA_USERNAME', passwordVariable: 'JBT_QA_E2E_KAA_PASSWORD'),
-                             usernamePassword(credentialsId: 'KAA_CREDS_STAGE', usernameVariable: 'KAA_USERNAME', passwordVariable: 'KAA_PASSWORD'),
-
-                             string(credentialsId: 'ARTIFACTORY_PASS', variable: 'ARTIFACTORY_PASS'),
-                             string(credentialsId: 'JBT_QA_E2E_KAA_PASSWORD', variable: 'KAA_PASSWORD'),
-
-            ]) {
-                try {
-                    sh "export KAA_TAG=${currentVersion}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
-                } catch (e) {
-                    echo "FAILED: $e"
-                    saveLogs("${kaaCommit}")
-                    sh "export JBT_BACKEND_DIR=`cd ../jbt-backend;pwd`; docker-compose --project-name ${kaaCommit} down -t 1 || true"
-                    throw e
-                }
+            try {
+                sh "export KAA_TAG=${currentVersion}; export COMPOSE_PROJECT=${kaaCommit}; ./run_local.sh"
+            } catch (e) {
+                echo "FAILED: $e"
+                saveLogs("${kaaCommit}")
+                sh "export JBT_BACKEND_DIR=`cd ../jbt-backend;pwd`; docker-compose --project-name ${kaaCommit} down -t 1 || true"
+                throw e
             }
         }
     }
@@ -275,35 +278,29 @@ node(selectNode()) {
             def kaaAgentTag = parseKaaAgentTag()
             dir('jbt-qa-e2e') {
 
-                withCredentials([usernamePassword(credentialsId: 'JBT_QA_E2E_CREDENTIALS_PROD', usernameVariable: 'JBT_QA_E2E_USER', passwordVariable: 'JBT_QA_E2E_PASS'),
-                                 string(credentialsId: 'ARTIFACTORY_PASS', variable: 'ARTIFACTORY_PASS'),
-                                 string(credentialsId: 'JBT_QA_E2E_KAA_PASSWORD', variable: 'JBT_QA_E2E_KAA_PASSWORD'),
+                timeout(30) {
+                    sh """#!/bin/bash
+                    
+                    ./mkenv.sh /stage
+                    
+                    export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
+                    export JBT_QA_E2E_KAA_HOST='localhost'
+                    export JBT_QA_E2E_KAA_PORT='7777'
+                    export JBT_QA_E2E_CASSANDRA_HOST='localhost'
+                    export JBT_QA_E2E_BOOTSTRAP_SERVERS='localhost:9092'
+                    export JBT_QA_E2E_AGENT_IMAGE_TAG='${kaaAgentTag}'
+                    export JBT_QA_E2E_S3_REPORT_BUCKET='jbt-qa-it-tag-images'
+                    export JBT_QA_E2E_S3_REPORT_PREFIX='reports'
+                    export JBT_QA_E2E_S3_UPLOADER_BUCKET='jbt-qa-it-tag-images'
+                    export BT_QA_E2E_S3_UPLOADER_PREFIX='binary'
+                    export JBT_QA_E2E_ELASTIC_PROTOCOL='http'
+                    export JBT_QA_E2E_ELASTIC_HOST='localhost'
+                    export JBT_QA_E2E_ELASTIC_PORT='9200'
 
-                ]) {
-                    timeout(30) {
-                        sh """#!/bin/bash
-                        
-                        ./mkenv.sh /stage
-                        
-                        export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
-                        export JBT_QA_E2E_KAA_HOST='localhost'
-                        export JBT_QA_E2E_KAA_PORT='7777'
-                        export JBT_QA_E2E_CASSANDRA_HOST='localhost'
-                        export JBT_QA_E2E_BOOTSTRAP_SERVERS='localhost:9092'
-                        export JBT_QA_E2E_AGENT_IMAGE_TAG='${kaaAgentTag}'
-                        export JBT_QA_E2E_S3_REPORT_BUCKET='jbt-qa-it-tag-images'
-                        export JBT_QA_E2E_S3_REPORT_PREFIX='reports'
-                        export JBT_QA_E2E_S3_UPLOADER_BUCKET='jbt-qa-it-tag-images'
-                        export BT_QA_E2E_S3_UPLOADER_PREFIX='binary'
-                        export JBT_QA_E2E_ELASTIC_PROTOCOL='http'
-                        export JBT_QA_E2E_ELASTIC_HOST='localhost'
-                        export JBT_QA_E2E_ELASTIC_PORT='9200'
-
-                        ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.agent.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${ARTIFACTORY_PASS}' --info                    
-                    """
-
-                    }
+                    ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.agent.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${ARTIFACTORY_PASS}' --info                    
+                """
                 }
+
             }
 
         } catch (e) {
@@ -326,14 +323,8 @@ node(selectNode()) {
             }
 
             dir('jbt-kaa-agent-builder') {
-                withCredentials([usernamePassword(credentialsId: 'JBT_QA_E2E_CREDENTIALS', usernameVariable: 'JBT_QA_E2E_USER', passwordVariable: 'JBT_QA_E2E_PASS'),
-                                 usernamePassword(credentialsId: 'KAA_CREDS_STAGE', usernameVariable: 'JBT_QA_E2E_KAA_USERNAME', passwordVariable: 'JBT_QA_E2E_KAA_PASSWORD'),
-                                 usernamePassword(credentialsId: 'KAA_CREDS_STAGE', usernameVariable: 'KAA_USERNAME', passwordVariable: 'KAA_PASSWORD'),
-
-                ]) {
-                    saveLogs("${kaaCommit}")
-                    sh "export JBT_BACKEND_DIR=`cd ../jbt-backend;pwd`; docker-compose --project-name ${kaaCommit} down -t 1 || true"
-                }
+                saveLogs("${kaaCommit}")
+                sh "export JBT_BACKEND_DIR=`cd ../jbt-backend;pwd`; docker-compose --project-name ${kaaCommit} down -t 1 || true"
             }
         }
     }
