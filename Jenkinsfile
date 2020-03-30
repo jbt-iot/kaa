@@ -1,4 +1,4 @@
-@Library('jbt-shared-lib@v0.1.20') _
+@Library('jbt-shared-lib@v0.1.24') _
 
 import com.jbt.jenkins.Container
 
@@ -8,6 +8,7 @@ LIB.init()
 env.GITHUB_HTTP_URL = 'https://github.com/jbt-iot/kaa'
 env.GITHUB_GIT_URL = 'git@github.com:jbt-iot/kaa.git'
 
+def envName = null
 // noinspection GroovyAssignabilityCheck
 properties([
 
@@ -136,6 +137,7 @@ node(selectNode()) {
 
                 sh './gradlew'
                 LIB.build.setDefaultDescription()
+                envName = LIB.build.getEnvironmentName()
             }
 
             dir('jbt-infrastructure') {
@@ -355,30 +357,35 @@ node(selectNode()) {
     }
 
     stage ('change parent chart requirements') {
-        dir ('kaa') {
-            if (env.BRANCH_NAME == '0.9.0-patched') {
-                LIB.build.triggerBuild("jbt-iot/jbt-metachart/master", [
-                  COMPONENT: 'kaa',
-                  COMPONENT_VERSION: LIB.version.getCurrentVersion()
-                ])
-            }
+      steps {
+        script {
+          if (envName != null) {
+            LIB.build.triggerBuild("jbt-iot/jbt-metachart/${envName}", [
+              COMPONENT: 'kaa',
+              COMPONENT_VERSION: LIB.version.getCurrentVersion()
+            ])
+          }
         }
+      }
     }
 
-    stage('deploy to stage') {
-        dir ('kaa') {
-            if (env.BRANCH_NAME == '0.9.0-patched') {
-                LIB.build.triggerBuild("jbt-iot/jbt-environment/master", [
-                  CLUSTER_NAME: 'stage',
-                  ENVIRONMENT_NAME: 'stage',
-                  SECRETS_FROM: 'stage',
-                  ACTION: 'create',
-                  REMOVE_ON_FAILURE: 'false',
-                  HELM_CHART_ONLY: 'true'
-                ])
-            }
+    stage('deploy to environment') {
+      steps {
+        script {
+          if (envName != null) {
+            LIB.build.triggerBuild("jbt-iot/jbt-environment/master", [
+              ACTION: 'update',
+              ENVIRONMENT_NAME: envName == "master" ? "stage" : envName,
+              CHART: 'jbt_metachart',
+              CHART_VERSION: 'latest',
+              REMOVE_ON_FAILURE: 'false',
+            ])
+          }
         }
+      }
     }
+
+
 }//node
 
 def parseKaaAgentTag() {
