@@ -359,7 +359,7 @@ node(selectNode()) {
     stage ('change parent chart requirements') {
       steps {
         script {
-          if (envName != null) {
+          if (envName != null || env.BRANCH_NAME == "0.9.0-patched") {
             LIB.build.triggerBuild("jbt-iot/jbt-metachart/${envName}", [
               COMPONENT: 'kaa',
               COMPONENT_VERSION: LIB.version.getCurrentVersion()
@@ -372,7 +372,7 @@ node(selectNode()) {
     stage('deploy to environment') {
       steps {
         script {
-          if (envName != null) {
+          if (envName != null || env.BRANCH_NAME == "0.9.0-patched" ) {
             LIB.build.triggerBuild("jbt-iot/jbt-environment/master", [
               ACTION: 'update',
               ENVIRONMENT_NAME: envName == "master" ? "stage" : envName,
