@@ -1,4 +1,4 @@
-@Library('jbt-shared-lib@v0.1.24') _
+@Library('jbt-shared-lib@v0.1.32') _
 
 import com.jbt.jenkins.Container
 
@@ -357,32 +357,47 @@ node(selectNode()) {
     }
 
     stage ('change parent chart requirements') {
-      steps {
-        script {
-          if (envName != null || env.BRANCH_NAME == "0.9.0-patched") {
-            LIB.build.triggerBuild("jbt-iot/jbt-metachart/${envName}", [
-              COMPONENT: 'kaa',
-              COMPONENT_VERSION: LIB.version.getCurrentVersion()
-            ])
-          }
+        when {
+            expression {
+                return envName != null || LIB.build.isOnReleaseBranch()
+            }
         }
-      }
+        steps {
+            script {
+                String componentVersion = LIB.version.getCurrentVersion()
+                jobParams = [
+                  COMPONENT_VERSION_CHANGE_JSON: "{\"kaa\": \"${componentVersion}\"}"
+                ]
+
+                if (envName != null) {
+                    LIB.build.triggerBuild("jbt-iot/jbt-metachart/${envName}", jobParams)
+                } else if (LIB.build.isOnReleaseBranch()) {
+                    String currentBranch = env.BRANCH_NAME
+                    jobParams["RELEASE"] = "auto"
+                    jobParams["RELEASE_INCREMENT_TYPE"] = "incrementPatch"
+                    LIB.build.triggerBuild("jbt-iot/jbt-metachart/${currentBranch}", jobParams)
+                }
+            }
+        }
     }
 
     stage('deploy to environment') {
-      steps {
-        script {
-          if (envName != null || env.BRANCH_NAME == "0.9.0-patched" ) {
-            LIB.build.triggerBuild("jbt-iot/jbt-environment/master", [
-              ACTION: 'update',
-              ENVIRONMENT_NAME: envName == "master" ? "stage" : envName,
-              CHART: 'jbt_metachart',
-              CHART_VERSION: 'latest',
-              REMOVE_ON_FAILURE: 'false',
-            ])
-          }
+        when {
+            expression {
+                return envName != null
+            }
         }
-      }
+        steps {
+            script {
+                LIB.build.triggerBuild("jbt-iot/jbt-environment/master", [
+                  ACTION: 'update',
+                  ENVIRONMENT_NAME: envName == "master" ? "stage" : envName,
+                  CHART: 'jbt_metachart',
+                  CHART_VERSION: 'latest',
+                  REMOVE_ON_FAILURE: 'false',
+                ])
+            }
+        }
     }
 
 
