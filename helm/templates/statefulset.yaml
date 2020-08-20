@@ -11,7 +11,6 @@ metadata:
     {{ toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  serviceName: {{ include "kaa.fullname" . }}
   replicas: {{ .Values.replicaCount }}
   updateStrategy:
     type: {{ .Values.statefulset.updateStrategy }}
