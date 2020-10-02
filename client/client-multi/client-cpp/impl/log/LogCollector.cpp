@@ -137,12 +137,12 @@ RecordFuture LogCollector::addLogRecord(const KaaUserLogRecord& record)
                     KaaUserLogRecord decoded_record;
                     decoder.fromByteArray(s_record.getData().data(), s_record.getSize(), decoded_record);
 
-                    auto data = record.data.get_DeviceData();
-
                     KAA_LOG_DEBUG(boost::format("Original timestamp is %1%, LogRecord timestamp is %2%")
                         % record.timestamp 
                         % decoded_record.timestamp
                     );
+
+                    auto data = decoded_record.data.get_DeviceData();
 
                     for(auto&& property: data.KeyValueProperties)
                     {
@@ -338,9 +338,9 @@ std::shared_ptr<LogSyncRequest> LogCollector::getLogUploadRequest()
         KaaUserLogRecord decoded_record;
         decoder.fromByteArray(s_record.getData().data(), s_record.getSize(), decoded_record);
 
-        auto data = record.data.get_DeviceData();
-
         KAA_LOG_DEBUG(boost::format("Stored timestamp is %1%") % decoded_record.timestamp);
+
+        auto data = decoded_record.data.get_DeviceData();
 
         for (auto &&property : data.KeyValueProperties)
         {
