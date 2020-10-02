@@ -131,6 +131,26 @@ RecordFuture LogCollector::addLogRecord(const KaaUserLogRecord& record)
             {
                 try {
                     auto bucketInfo = storage_->addLogRecord(LogRecord(record));
+
+                    LogRecord s_record = record;
+                    AvroByteArrayConverter<KaaUserLogRecord> decoder;
+                    KaaUserLogRecord decoded_record;
+                    decoder.fromByteArray(s_record.getData().data(), s_record.getSize(), decoded_record);
+
+                    auto data = record.data.get_DeviceData();
+
+                    KAA_LOG_DEBUG(boost::format("Original timestamp is %1%, LogRecord timestamp is %2%")
+                        % record.timestamp 
+                        % decoded_record.timestamp
+                    );
+
+                    for(auto&& property: data.KeyValueProperties)
+                    {
+                        KAA_LOG_DEBUG(boost::format("Serialized Property is %1%, Value is %2%") 
+                            % property.propertyName
+                            % property.propertyValue
+                        );
+                    }
                     updateBucketInfo(bucketInfo, recordDeliveryInfo);
                 } catch (...) {
                     try {
@@ -311,6 +331,22 @@ std::shared_ptr<LogSyncRequest> LogCollector::getLogUploadRequest()
     }
 
     KAA_LOG_TRACE(boost::format("Sending %1% log records") % bucket.getRecords().size());
+
+    for(auto&& s_record: bucket.getRecords())
+    {
+        AvroByteArrayConverter<KaaUserLogRecord> decoder;
+        KaaUserLogRecord decoded_record;
+        decoder.fromByteArray(s_record.getData().data(), s_record.getSize(), decoded_record);
+
+        auto data = record.data.get_DeviceData();
+
+        KAA_LOG_DEBUG(boost::format("Stored timestamp is %1%") % decoded_record.timestamp);
+
+        for (auto &&property : data.KeyValueProperties)
+        {
+            KAA_LOG_DEBUG(boost::format("Stored Property is %1%, Value is %2%") % property.propertyName % property.propertyValue);
+        }
+    }
 
     request.reset(new LogSyncRequest);
     request->requestId = bucket.getBucketId();
