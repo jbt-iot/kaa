@@ -343,12 +343,12 @@ void SQLiteDBLogStorage::applyDBOptimization(int mask)
     if (mask & SQLiteOptimizationOptions::SQLITE_MEMORY_JOURNAL_MODE) {
         sqlite3_exec(db_, KAA_MEMORY_JOURNAL_MODE_OPTION, nullptr, nullptr, nullptr);
         KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_MEMORY_JOURNAL_MODE_OPTION);
-        /*#ifdef __QNXNTO__
+        #ifdef __QNXNTO__
         sqlite3_exec(db_, KAA_QNX_MEMORY_MAPPED_SIZE, nullptr, nullptr, nullptr);
         KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_QNX_MEMORY_MAPPED_SIZE);
-        sqlite3_exec(db_, KAA_QNX_LOCKING_MODE, nullptr, nullptr, nullptr);
-        KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_QNX_LOCKING_MODE);
-        #endif*/
+        /*sqlite3_exec(db_, KAA_QNX_LOCKING_MODE, nullptr, nullptr, nullptr);
+        KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_QNX_LOCKING_MODE);*/
+        #endif
     }
     if (mask & SQLiteOptimizationOptions::SQLITE_MEMORY_TEMP_STORE) {
         sqlite3_exec(db_, KAA_MEMORY_TEMP_STORE_OPTION, nullptr, nullptr, nullptr);
