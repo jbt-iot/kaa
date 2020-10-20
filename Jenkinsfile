@@ -284,7 +284,7 @@ node(selectNode()) {
                 timeout(30) {
                     sh """#!/bin/bash
                     
-                    ./mkenv.sh /prod
+                    ./mkenv.sh /prod prod.json
                     
                     export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
                     export JBT_QA_E2E_KAA_HOST='localhost'
