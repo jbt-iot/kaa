@@ -272,65 +272,65 @@ node(selectNode()) {
         }
     }
 
-    stage('e2e vs local env') {
-        if (isPR()) {
-            echo "skip e2e check for PR builds"
-            return
-        }
-        try {
-            def kaaAgentTag = parseKaaAgentTag()
-            dir('jbt-qa-e2e') {
-
-                timeout(30) {
-                    sh """#!/bin/bash
-                    
-                    ./mkenv.sh /prod
-                    
-                    export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
-                    export JBT_QA_E2E_KAA_HOST='localhost'
-                    export JBT_QA_E2E_KAA_PORT='7777'
-                    export JBT_QA_E2E_CASSANDRA_HOST='localhost'
-                    export JBT_QA_E2E_BOOTSTRAP_SERVERS='localhost:9092'
-                    export JBT_QA_E2E_AGENT_IMAGE_TAG='${kaaAgentTag}'
-                    export JBT_QA_E2E_S3_REPORT_BUCKET='jbt-qa-it-tag-images'
-                    export JBT_QA_E2E_S3_REPORT_PREFIX='reports'
-                    export JBT_QA_E2E_S3_UPLOADER_BUCKET='jbt-qa-it-tag-images'
-                    export JBT_QA_E2E_S3_UPLOADER_PREFIX='binary'
-                    export JBT_QA_E2E_ELASTIC_PROTOCOL='http'
-                    export JBT_QA_E2E_ELASTIC_HOST='localhost'
-                    export JBT_QA_E2E_ELASTIC_PORT='9200'
-
-                    ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.agent.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${env.ARTIFACTORY_PASS}' --info                    
-                """
-                }
-
-            }
-
-        } catch (e) {
-            echo "FAILED: $e"
-            throw e
-        } finally {
-            dir('jbt-qa-e2e') {
-                echo 'Publish unit test results'
-                junit allowEmptyResults: true, testResults: 'build/test-results/test/TEST-*.xml'
-
-                sh "./gradlew allureReport || true"
-
-                allure([
-                        commandline      : 'allure270pony',
-                        includeProperties: false,
-                        jdk              : 'jdk8u172',
-                        reportBuildPolicy: 'ALWAYS',
-                        results          : [[path: 'build/reports/allure-results']]
-                ])
-            }
-
-            dir('jbt-kaa-agent-builder') {
-                saveLogs("${kaaCommit}")
-                sh "export JBT_BACKEND_DIR=`cd ../jbt-backend;pwd`; docker-compose --project-name ${kaaCommit} down -t 1 || true"
-            }
-        }
-    }
+//     stage('e2e vs local env') {
+//         if (isPR()) {
+//             echo "skip e2e check for PR builds"
+//             return
+//         }
+//         try {
+//             def kaaAgentTag = parseKaaAgentTag()
+//             dir('jbt-qa-e2e') {
+//
+//                 timeout(30) {
+//                     sh """#!/bin/bash
+//
+//                     ./mkenv.sh /prod prod.json
+//
+//                     export JBT_QA_E2E_APPLICATION_URL='http://localhost:8084'
+//                     export JBT_QA_E2E_KAA_HOST='localhost'
+//                     export JBT_QA_E2E_KAA_PORT='7777'
+//                     export JBT_QA_E2E_CASSANDRA_HOST='localhost'
+//                     export JBT_QA_E2E_BOOTSTRAP_SERVERS='localhost:9092'
+//                     export JBT_QA_E2E_AGENT_IMAGE_TAG='${kaaAgentTag}'
+//                     export JBT_QA_E2E_S3_REPORT_BUCKET='jbt-qa-it-tag-images'
+//                     export JBT_QA_E2E_S3_REPORT_PREFIX='reports'
+//                     export JBT_QA_E2E_S3_UPLOADER_BUCKET='jbt-qa-it-tag-images'
+//                     export JBT_QA_E2E_S3_UPLOADER_PREFIX='binary'
+//                     export JBT_QA_E2E_ELASTIC_PROTOCOL='http'
+//                     export JBT_QA_E2E_ELASTIC_HOST='localhost'
+//                     export JBT_QA_E2E_ELASTIC_PORT='9200'
+//
+//                     ./gradlew clean test publish -PtestngSuiteXml='src/test/resources/testng-e2e.agent.xml' -PartifactoryUsername='admin' -PartifactoryPassword='${env.ARTIFACTORY_PASS}' --info
+//                 """
+//                 }
+//
+//             }
+//
+//         } catch (e) {
+//             echo "FAILED: $e"
+//             throw e
+//         } finally {
+//             dir('jbt-qa-e2e') {
+//                 echo 'Publish unit test results'
+//                 junit allowEmptyResults: true, testResults: 'build/test-results/test/TEST-*.xml'
+//
+//                 sh "./gradlew allureReport || true"
+//
+//                 allure([
+//                         commandline      : 'allure270pony',
+//                         includeProperties: false,
+//                         jdk              : 'jdk8u172',
+//                         reportBuildPolicy: 'ALWAYS',
+//                         results          : [[path: 'build/reports/allure-results']]
+//                 ])
+//             }
+//
+//             dir('jbt-kaa-agent-builder') {
+//                 saveLogs("${kaaCommit}")
+//                 sh "export JBT_BACKEND_DIR=`cd ../jbt-backend;pwd`; docker-compose --project-name ${kaaCommit} down -t 1 || true"
+//             }
+//         }
+//     }
 
     stage('aptly') {
         if (!isPR()) {

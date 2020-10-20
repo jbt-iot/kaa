@@ -139,11 +139,12 @@
  * OPTIMIZATION OPTIONS.
  */
 #define KAA_SYNCHRONIZATION_OPTION        "PRAGMA synchronous=NORMAL"
-#define KAA_MEMORY_JOURNAL_MODE_OPTION    "PRAGMA journal_mode=DELETE"
+#define KAA_MEMORY_JOURNAL_MODE_OPTION    "PRAGMA journal_mode=WAL"
 #define KAA_QNX_LOCKING_MODE              "PRAGMA locking_mode=EXCLUSIVE"
 #define KAA_QNX_MEMORY_MAPPED_SIZE        "PRAGMA mmap_size=0"
 #define KAA_MEMORY_TEMP_STORE_OPTION      "PRAGMA temp_store=MEMORY"
 #define KAA_AUTO_VACUUM_OPTION            "PRAGMA auto_vacuum=FULL"
+#define KAA_BUSY_TIMEOUT                  "PRAGMA busy_timeout = 30000"
 
 namespace kaa {
 
@@ -342,12 +343,12 @@ void SQLiteDBLogStorage::applyDBOptimization(int mask)
     if (mask & SQLiteOptimizationOptions::SQLITE_MEMORY_JOURNAL_MODE) {
         sqlite3_exec(db_, KAA_MEMORY_JOURNAL_MODE_OPTION, nullptr, nullptr, nullptr);
         KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_MEMORY_JOURNAL_MODE_OPTION);
-        /*#ifdef __QNXNTO__
+        #ifdef __QNXNTO__
         sqlite3_exec(db_, KAA_QNX_MEMORY_MAPPED_SIZE, nullptr, nullptr, nullptr);
         KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_QNX_MEMORY_MAPPED_SIZE);
-        sqlite3_exec(db_, KAA_QNX_LOCKING_MODE, nullptr, nullptr, nullptr);
-        KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_QNX_LOCKING_MODE);
-        #endif*/
+        /*sqlite3_exec(db_, KAA_QNX_LOCKING_MODE, nullptr, nullptr, nullptr);
+        KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_QNX_LOCKING_MODE);*/
+        #endif
     }
     if (mask & SQLiteOptimizationOptions::SQLITE_MEMORY_TEMP_STORE) {
         sqlite3_exec(db_, KAA_MEMORY_TEMP_STORE_OPTION, nullptr, nullptr, nullptr);
@@ -356,6 +357,10 @@ void SQLiteDBLogStorage::applyDBOptimization(int mask)
     if (mask & SQLiteOptimizationOptions::SQLITE_AUTO_VACUUM_FULL) {
         sqlite3_exec(db_, KAA_AUTO_VACUUM_OPTION, nullptr, nullptr, nullptr);
         KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_AUTO_VACUUM_OPTION);
+    }
+    if (mask & SQLiteOptimizationOptions::SQLITE_BUSY_TIMEOUT) {
+        sqlite3_exec(db_, KAA_BUSY_TIMEOUT, nullptr, nullptr, nullptr);
+        KAA_LOG_INFO(boost::format("Applied '%s' optimization") % KAA_BUSY_TIMEOUT);
     }
 }
 

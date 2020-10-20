@@ -46,11 +46,13 @@ enum SQLiteOptimizationOptions
     SQLITE_MEMORY_JOURNAL_MODE = 0x2,
     SQLITE_MEMORY_TEMP_STORE   = 0x4,
     SQLITE_AUTO_VACUUM_FULL    = 0x8,
+    SQLITE_BUSY_TIMEOUT        = 0x10,
 
     SQLITE_ALL_OPTIMIZATIONS   = SQLITE_SYNCHRONOUS_FLAG |
                                  SQLITE_MEMORY_JOURNAL_MODE |
                                  SQLITE_MEMORY_TEMP_STORE |
-                                 SQLITE_AUTO_VACUUM_FULL
+                                 SQLITE_AUTO_VACUUM_FULL |
+                                 SQLITE_BUSY_TIMEOUT
 };
 
 class SQLiteDBLogStorage : public ILogStorage, public ILogStorageStatus {
