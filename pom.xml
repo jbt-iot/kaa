@@ -73,7 +73,7 @@ Copyright 2014-2016 CyberVision, Inc.
         <httpcomponents.version>4.3.2</httpcomponents.version>
         <jackson.version>2.4.1</jackson.version>
         <joda-time.version>2.2</joda-time.version>
-        <junit.version>4.11</junit.version>
+        <junit.version>4.13.1</junit.version>
         <embed.mongo.version>1.42</embed.mongo.version>
         <mongo-driver.version>3.0.1</mongo-driver.version>
         <mockito.version>1.9.5</mockito.version>
